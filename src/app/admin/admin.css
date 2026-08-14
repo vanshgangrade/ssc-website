@@ -1,0 +1,334 @@
+.admin-wrap {
+  min-height: 100vh;
+  background: var(--void);
+  color: var(--screen);
+  padding: 32px 20px 80px;
+  max-width: 960px;
+  margin: 0 auto;
+  font-family: var(--font-work-sans), sans-serif;
+}
+
+.admin-eyebrow {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 6px;
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.admin-header h1 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 34px;
+  letter-spacing: 0.02em;
+}
+
+.admin-card {
+  background: var(--void-soft);
+  border: 1px solid rgba(232, 179, 65, 0.15);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.admin-card h2 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  margin-bottom: 16px;
+}
+
+.poll-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.poll-status-pill {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.poll-status-pill.open {
+  background: rgba(120, 200, 120, 0.15);
+  color: #8fd98f;
+  border: 1px solid rgba(120, 200, 120, 0.35);
+}
+.poll-status-pill.closed {
+  background: rgba(192, 67, 44, 0.15);
+  color: var(--ember);
+  border: 1px solid rgba(192, 67, 44, 0.35);
+}
+
+.admin-btn {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border-radius: 4px;
+  background: var(--marquee);
+  color: var(--void);
+  cursor: pointer;
+  border: none;
+}
+.admin-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.admin-btn-ghost {
+  background: transparent;
+  color: var(--ash);
+  border: 1px solid rgba(143, 135, 121, 0.4);
+}
+
+.admin-error {
+  color: var(--ember);
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+}
+
+.admin-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.admin-bar-track {
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.admin-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--marquee-dim), var(--marquee));
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.admin-table th {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.admin-empty {
+  text-align: center;
+  color: var(--ash);
+  padding: 24px 0;
+}
+
+.admin-btn-danger {
+  background: transparent;
+  color: var(--ember);
+  border: 1px solid rgba(192, 67, 44, 0.4);
+}
+
+/* ---------- poll deadline ---------- */
+.poll-toggle-wrap {
+  margin-bottom: 20px;
+}
+
+.poll-deadline {
+  margin-top: 14px;
+}
+
+.poll-deadline label {
+  display: block;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 6px;
+}
+
+.poll-deadline-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.poll-deadline-row input[type="datetime-local"] {
+  background: var(--void);
+  color: var(--screen);
+  border: 1px solid rgba(232, 179, 65, 0.25);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 13px;
+}
+
+.poll-test-email {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-email-status {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  color: var(--ash);
+}
+
+/* ---------- movie manager ---------- */
+.movie-manager {
+  display: grid;
+  gap: 24px;
+}
+
+.movie-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.movie-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--void);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+
+.movie-poster-preview {
+  width: 44px;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.movie-poster-preview-lg {
+  width: 100px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 2px;
+  margin-top: 4px;
+}
+
+.movie-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.movie-row-name {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--screen);
+}
+
+.movie-row-meta {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10px;
+  color: var(--ash);
+  margin-top: 2px;
+}
+
+.movie-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.movie-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid rgba(232, 179, 65, 0.12);
+  padding-top: 20px;
+}
+
+.movie-form h3 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--marquee);
+}
+
+.movie-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.movie-form input[type="text"],
+.movie-form input:not([type]),
+.movie-form textarea {
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+  background: var(--void);
+  color: var(--screen);
+  border: 1px solid rgba(232, 179, 65, 0.25);
+  border-radius: 4px;
+  padding: 9px 10px;
+  resize: vertical;
+}
+
+.movie-form input[type="file"] {
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 12px;
+  color: var(--ash);
+}
+
+.movie-form-actions {
+  display: flex;
+  gap: 10px;
+}
