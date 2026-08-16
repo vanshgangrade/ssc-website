@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { Resend } from "resend";
 
 export async function POST() {
   const session = await auth();
@@ -8,22 +7,36 @@ export async function POST() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const zeptoApiKey = process.env.ZEPTO_API_KEY;
   const from = process.env.EMAIL_FROM;
-  if (!apiKey) return NextResponse.json({ error: "RESEND_API_KEY is not set" }, { status: 500 });
+
+  if (!zeptoApiKey) return NextResponse.json({ error: "ZEPTO_API_KEY is not set" }, { status: 500 });
   if (!from) return NextResponse.json({ error: "EMAIL_FROM is not set" }, { status: 500 });
 
-  const resend = new Resend(apiKey);
-  const { data, error } = await resend.emails.send({
-    from,
-    to: session.user.email,
-    subject: "SSC poll — test email",
-    html: `<p>This is a test email from the Silver Screen Club poll admin panel. If you got this, Resend is wired up correctly.</p>`,
-  });
+  try {
+    const response = await fetch("https://api.zeptomail.in/v1.1/email", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": zeptoApiKey,
+      },
+      body: JSON.stringify({
+        from: { address: from },
+        to: [{ email_address: { address: session.user.email } }],
+        subject: "SSC poll — test email",
+        htmlbody: "<p>This is a test email from the Silver Screen Club poll admin panel. If you got this, ZeptoMail is wired up correctly.</p>",
+      }),
+    });
 
-  if (error) {
-    return NextResponse.json({ error: error.message ?? "Resend rejected the request" }, { status: 502 });
+    if (!response.ok) {
+      const errorText = await response.text();
+      return NextResponse.json({ error: `ZeptoMail rejected the request: ${errorText}` }, { status: 502 });
+    }
+
+    const data = await response.json();
+    return NextResponse.json({ ok: true, data });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message ?? "ZeptoMail rejected the request" }, { status: 502 });
   }
-
-  return NextResponse.json({ ok: true, id: data?.id });
 }

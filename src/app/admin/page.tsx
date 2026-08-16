@@ -32,7 +32,7 @@ export default async function AdminPage() {
     getPollState(),
   ]);
 
-  const counts: Record<string, number> = Object.fromEntries(movies.map((m) => [m.id, 0]));
+  const counts: Record<string, number> = Object.fromEntries(movies.map((m: any) => [m.id, 0]));
   for (const v of votes) {
     if (v.movieId in counts) counts[v.movieId] += 1;
   }
@@ -67,7 +67,7 @@ export default async function AdminPage() {
           Standings ({total} vote{total === 1 ? "" : "s"})
         </h2>
         <div className="admin-bars">
-          {movies.map((m) => {
+          {movies.map((m: any) => {
             const pct = total > 0 ? Math.round((counts[m.id] / total) * 100) : 0;
             return (
               <div key={m.id} className="admin-bar-row">
@@ -106,7 +106,7 @@ export default async function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {votes.map((v) => (
+              {votes.map((v: any) => (
                 <tr key={v.userId}>
                   <td>{v.user.email}</td>
                   <td>{v.user.name ?? "—"}</td>
