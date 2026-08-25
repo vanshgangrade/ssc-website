@@ -22,7 +22,7 @@ function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
 
     let animId: number;
     const particles: { x: number; y: number; r: number; vx: number; vy: number; a: number }[] = [];
-    const count = 45;
+    const count = 30;
 
     function resize() {
       canvas!.width = window.innerWidth;
@@ -35,10 +35,10 @@ function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: Math.random() * 1.8 + 0.4,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: -(Math.random() * 0.4 + 0.1),
-        a: Math.random() * 0.5 + 0.15,
+        r: Math.random() * 2 + 0.5,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: -(Math.random() * 0.3 + 0.08),
+        a: Math.random() * 0.12 + 0.04,
       });
     }
 
@@ -47,7 +47,7 @@ function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
       for (const p of particles) {
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(139,94,47,${p.a})`;
+        ctx!.fillStyle = `rgba(180,140,80,${p.a})`;
         ctx!.fill();
         p.x += p.vx;
         p.y += p.vy;
@@ -124,30 +124,34 @@ export default function RecommendationForm({
       {/* background particles */}
       <canvas ref={canvasRef} className="particle-canvas" />
 
-      {/* hero section */}
       <div className="rec-page">
+        {/* decorative top strip */}
+        <div className="rec-strip" />
+
         <header className="rec-hero">
           <div className="rec-hero-inner">
-            {/* marquee bulbs */}
-            <div className="marquee-row">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <span className="m-bulb" key={i} style={{ animationDelay: `${i * 0.18}s` }} />
-              ))}
-            </div>
 
-            <p className="eyebrow">Silver Screen Club Presents</p>
+            <p className="eyebrow">
+              <span className="eyebrow-dash" />
+              Silver Screen Club
+              <span className="eyebrow-dash" />
+            </p>
 
             <h1 className="rec-title">
-              WHAT ARE WE<br />
-              <em>WATCHING THIS TIME?</em>
+              What are we
+              <em>watching this time?</em>
             </h1>
 
+            <div className="rec-divider">
+              <span /><span className="rec-diamond">◆</span><span />
+            </div>
+
             <p className="rec-aside">
-              (Yes, we&apos;re asking you again. No, we won&apos;t just pick for you.)
+              Yes, we&apos;re asking you again. No, we won&apos;t just pick for you.
             </p>
 
             <p className="rec-whisper">
-              Got a title stuck in your head? Whisper it to the group chat<br />
+              Got a title stuck in your head? Whisper it to the group chat
               before the projector gets impatient and starts playing static.
             </p>
 
@@ -159,8 +163,8 @@ export default function RecommendationForm({
                     src={session.image}
                     alt=""
                     referrerPolicy="no-referrer"
-                    width={24}
-                    height={24}
+                    width={28}
+                    height={28}
                   />
                 )}
                 <span className="auth-email">{session.email}</span>
@@ -169,9 +173,9 @@ export default function RecommendationForm({
                 </button>
               </div>
             ) : (
-              <button className="ticket-btn glow-btn" onClick={() => signIn("google")}>
-                <span className="ticket-stub" />
-                Sign in to Recommend
+              <button className="ticket-btn" onClick={() => signIn("google")}>
+                Sign in with Google
+                <span className="ticket-arrow">→</span>
               </button>
             )}
           </div>
@@ -198,7 +202,6 @@ export default function RecommendationForm({
                     maxLength={200}
                     className="rec-input"
                   />
-                  <div className="input-glow" />
                 </div>
 
                 <button
