@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { sendRecommendationConfirmationEmail } from "@/lib/email";
 
 export async function submitRecommendation(movieName: string) {
   const session = await auth();
@@ -22,6 +23,9 @@ export async function submitRecommendation(movieName: string) {
       },
     });
     revalidatePath("/admin");
+    if (session.user.email) {
+      await sendRecommendationConfirmationEmail(session.user.email, movieName.trim());
+    }
     return { success: true };
   } catch (error) {
     console.error("Failed to submit recommendation:", error);
