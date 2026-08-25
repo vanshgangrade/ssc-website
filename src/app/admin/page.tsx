@@ -7,6 +7,8 @@ import MovieManager from "./_components/MovieManager";
 import ExportButton from "./_components/ExportButton";
 import PaginatedVoters from "./_components/PaginatedVoters";
 import PaginatedRecommendations from "./_components/PaginatedRecommendations";
+import PaginatedEmailLogs from "./_components/PaginatedEmailLogs";
+import EmailTester from "./_components/EmailTester";
 import "./admin.css";
 
 export default async function AdminPage() {
@@ -36,14 +38,19 @@ export default async function AdminPage() {
   ]);
 
   let recommendations: any[] = [];
+  let emailLogs: any[] = [];
   let isTableMissing = false;
   try {
     recommendations = await prisma.recommendation.findMany({
       include: { user: { select: { email: true, name: true } } },
       orderBy: { createdAt: "desc" },
     });
+    emailLogs = await prisma.emailLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 100, // show latest 100
+    });
   } catch (e) {
-    console.error("Failed to fetch recommendations, table might be missing:", e);
+    console.error("Failed to fetch auxiliary tables, might be missing:", e);
     isTableMissing = true;
   }
 
@@ -71,6 +78,18 @@ export default async function AdminPage() {
                   "movieName" TEXT NOT NULL,
                   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   CONSTRAINT "Recommendation_pkey" PRIMARY KEY ("id")
+                );
+              `);
+              await prisma.$executeRawUnsafe(`
+                CREATE TABLE IF NOT EXISTS "EmailLog" (
+                  "id" TEXT NOT NULL,
+                  "to" TEXT NOT NULL,
+                  "subject" TEXT NOT NULL,
+                  "provider" TEXT NOT NULL,
+                  "status" TEXT NOT NULL,
+                  "errorMsg" TEXT,
+                  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  CONSTRAINT "EmailLog_pkey" PRIMARY KEY ("id")
                 );
               `);
               // Try to add foreign key, ignore if it already exists or fails
@@ -183,6 +202,20 @@ export default async function AdminPage() {
           movieName: r.movieName,
           createdAt: r.createdAt.toISOString(),
           user: r.user,
+        }))} />
+      </section>
+
+      <section className="admin-card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
+          <h2 style={{ margin: 0 }}>Email Delivery Logs</h2>
+          <div style={{ fontSize: "14px", color: "var(--ash)" }}>
+            Resend: {emailLogs.filter(l => l.provider === "resend").length} | ZeptoMail: {emailLogs.filter(l => l.provider === "zeptomail").length}
+          </div>
+        </div>
+        <EmailTester />
+        <PaginatedEmailLogs logs={emailLogs.map((l: any) => ({
+          ...l,
+          createdAt: l.createdAt.toISOString(),
         }))} />
       </section>
     </main>

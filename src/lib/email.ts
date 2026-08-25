@@ -1,3 +1,5 @@
+import { prisma } from "./prisma";
+
 const RESEND_API_URL = "https://api.resend.com/emails";
 const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -35,6 +37,10 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
       });
 
       if (resendRes.ok) {
+        // Log success for resend
+        await prisma.emailLog.create({
+          data: { to, subject, provider: "resend", status: "success" }
+        }).catch(e => console.error("Failed to log email:", e));
         return; // Successfully sent via Resend
       }
       
@@ -54,6 +60,9 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
   if (resendFailed) {
     if (!zeptoApiKey) {
       console.warn("ZEPTO_API_KEY not set — fallback failed.");
+      await prisma.emailLog.create({
+        data: { to, subject, provider: "failed", status: "error", errorMsg: "Missing ZeptoMail key" }
+      }).catch(e => console.error("Failed to log email:", e));
       return;
     }
 
@@ -76,11 +85,20 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
       if (!zeptoRes.ok) {
         const errorText = await zeptoRes.text();
         console.error(`ZeptoMail fallback also failed with status ${zeptoRes.status}: ${errorText}`);
+        await prisma.emailLog.create({
+          data: { to, subject, provider: "zeptomail", status: "error", errorMsg: errorText }
+        }).catch(e => console.error("Failed to log email:", e));
       } else {
         console.log("Successfully sent email via ZeptoMail fallback.");
+        await prisma.emailLog.create({
+          data: { to, subject, provider: "zeptomail", status: "success" }
+        }).catch(e => console.error("Failed to log email:", e));
       }
     } catch (err) {
       console.error("ZeptoMail fallback request threw an error:", err);
+      await prisma.emailLog.create({
+        data: { to, subject, provider: "zeptomail", status: "error", errorMsg: String(err) }
+      }).catch(e => console.error("Failed to log email:", e));
     }
   }
 }

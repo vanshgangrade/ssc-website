@@ -103,4 +103,14 @@ model Recommendation {
   createdAt DateTime @default(now())  
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)  
-} 
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  provider  String   // "resend" or "zeptomail" or "failed"
+  status    String   // "success" or "error"
+  errorMsg  String?
+  createdAt DateTime @default(now())
+}
