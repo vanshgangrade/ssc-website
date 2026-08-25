@@ -5,6 +5,8 @@ import { getPollState } from "@/lib/poll";
 import PollToggle from "./_components/PollToggle";
 import MovieManager from "./_components/MovieManager";
 import ExportButton from "./_components/ExportButton";
+import PaginatedVoters from "./_components/PaginatedVoters";
+import PaginatedRecommendations from "./_components/PaginatedRecommendations";
 import "./admin.css";
 
 export default async function AdminPage() {
@@ -157,37 +159,11 @@ export default async function AdminPage() {
 
       <section className="admin-card">
         <h2>Voters</h2>
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Name</th>
-                <th>Vote</th>
-                <th>Cast at</th>
-                <th>Last changed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {votes.map((v: any) => (
-                <tr key={v.userId}>
-                  <td>{v.user.email}</td>
-                  <td>{v.user.name ?? "—"}</td>
-                  <td>{v.movie.name}</td>
-                  <td>{v.createdAt.toLocaleString()}</td>
-                  <td>{v.updatedAt.toLocaleString()}</td>
-                </tr>
-              ))}
-              {votes.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="admin-empty">
-                    No votes cast yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <PaginatedVoters votes={votes.map(v => ({
+          ...v,
+          createdAt: v.createdAt.toISOString(),
+          updatedAt: v.updatedAt.toISOString(),
+        }))} />
       </section>
 
       <section className="admin-card">
@@ -202,37 +178,12 @@ export default async function AdminPage() {
             user: r.user,
           }))} />
         </div>
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Movie Name</th>
-                <th>Recommended By (Email)</th>
-                <th>Recommended By (Name)</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recommendations.map((r: any, i: number) => (
-                <tr key={r.id}>
-                  <td>{i + 1}</td>
-                  <td><strong>{r.movieName}</strong></td>
-                  <td>{r.user.email}</td>
-                  <td>{r.user.name ?? "—"}</td>
-                  <td>{r.createdAt.toLocaleString()}</td>
-                </tr>
-              ))}
-              {recommendations.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="admin-empty">
-                    No recommendations yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <PaginatedRecommendations recommendations={recommendations.map((r: any) => ({
+          id: r.id,
+          movieName: r.movieName,
+          createdAt: r.createdAt.toISOString(),
+          user: r.user,
+        }))} />
       </section>
     </main>
   );
