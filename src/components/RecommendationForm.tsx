@@ -146,12 +146,18 @@ export default function RecommendationForm({
               <em>WATCHING THIS TIME?</em>
             </h1>
 
-            <p className="rec-sub">
+            <p className="rec-aside">
               (Yes, we&apos;re asking you again. No, we won&apos;t just pick for you.)
-              <br /><br />
-              Hindi. English. Regional. Even that one genre you pretend not to like — all welcome here.
-              <br /><br />
-              Got a title stuck in your head? Whisper it to the group chat before the projector gets impatient and starts playing static.
+            </p>
+
+            <p className="rec-tagline">
+              Hindi. English. Regional.<br />
+              Even that one genre you pretend not to like — <span>all welcome here.</span>
+            </p>
+
+            <p className="rec-whisper">
+              Got a title stuck in your head? Whisper it to the group chat<br />
+              before the projector gets impatient and starts playing static.
             </p>
 
             {/* auth area */}
