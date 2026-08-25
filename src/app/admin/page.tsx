@@ -24,18 +24,26 @@ export default async function AdminPage() {
     );
   }
 
-  const [votes, movies, pollState, recommendations] = await Promise.all([
+  const [votes, movies, pollState] = await Promise.all([
     prisma.vote.findMany({
       include: { user: { select: { email: true, name: true } }, movie: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
     }),
     prisma.movie.findMany({ orderBy: { order: "asc" } }),
     getPollState(),
-    prisma.recommendation.findMany({
+  ]);
+
+  let recommendations: any[] = [];
+  let isTableMissing = false;
+  try {
+    recommendations = await prisma.recommendation.findMany({
       include: { user: { select: { email: true, name: true } } },
       orderBy: { createdAt: "desc" },
-    }),
-  ]);
+    });
+  } catch (e) {
+    console.error("Failed to fetch recommendations, table might be missing:", e);
+    isTableMissing = true;
+  }
 
   const counts: Record<string, number> = Object.fromEntries(movies.map((m: any) => [m.id, 0]));
   for (const v of votes) {
@@ -45,6 +53,41 @@ export default async function AdminPage() {
 
   return (
     <main className="admin-wrap">
+      {isTableMissing && (
+        <div style={{ background: "var(--ember)", color: "white", padding: "16px", borderRadius: "8px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <strong>Database Migration Required!</strong> The Recommendation table doesn't exist yet.
+          </div>
+          <form action={async () => {
+            "use server";
+            const isPostgres = process.env.DATABASE_URL?.includes("postgres") || process.env.DATABASE_URL?.includes("supabase") || process.env.POSTGRES_URL;
+            if (isPostgres) {
+              await prisma.$executeRawUnsafe(`
+                CREATE TABLE IF NOT EXISTS "Recommendation" (
+                  "id" TEXT NOT NULL,
+                  "userId" TEXT NOT NULL,
+                  "movieName" TEXT NOT NULL,
+                  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  CONSTRAINT "Recommendation_pkey" PRIMARY KEY ("id")
+                );
+              `);
+              // Try to add foreign key, ignore if it already exists or fails
+              try {
+                await prisma.$executeRawUnsafe(`
+                  ALTER TABLE "Recommendation" ADD CONSTRAINT "Recommendation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+                `);
+              } catch (e) {
+                console.error("Failed to add foreign key:", e);
+              }
+            }
+          }}>
+            <button type="submit" style={{ background: "white", color: "var(--ember)", padding: "8px 16px", borderRadius: "4px", fontWeight: "bold" }}>
+              Fix Database Now
+            </button>
+          </form>
+        </div>
+      )}
+
       <div className="admin-header">
         <div>
           <p className="admin-eyebrow">Silver Screen Club</p>
