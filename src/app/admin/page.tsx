@@ -50,16 +50,31 @@ export default async function AdminPage() {
           <p className="admin-eyebrow">Silver Screen Club</p>
           <h1>Admin — Poll Results</h1>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-        >
-          <button className="admin-btn admin-btn-ghost" type="submit">
-            Sign out
-          </button>
-        </form>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <form
+            action={async () => {
+              "use server";
+              const s = await auth();
+              if (s?.user?.isAdmin) {
+                await prisma.session.deleteMany();
+              }
+            }}
+          >
+            <button className="admin-btn admin-btn-ghost" type="submit" style={{ color: "var(--ember)", borderColor: "rgba(192, 67, 44, 0.3)" }}>
+              Force Logout All
+            </button>
+          </form>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }}
+          >
+            <button className="admin-btn admin-btn-ghost" type="submit">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
       <PollToggle
