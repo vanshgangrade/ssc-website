@@ -47,7 +47,7 @@ function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
       for (const p of particles) {
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(232,179,65,${p.a})`;
+        ctx!.fillStyle = `rgba(139,94,47,${p.a})`;
         ctx!.fill();
         p.x += p.vx;
         p.y += p.vy;
@@ -123,10 +123,6 @@ export default function RecommendationForm({
     <>
       {/* background particles */}
       <canvas ref={canvasRef} className="particle-canvas" />
-
-      {/* filmstrip rails */}
-      <div className="rail left"><div className="rail-holes" /></div>
-      <div className="rail right"><div className="rail-holes" /></div>
 
       {/* hero section */}
       <div className="rec-page">
