@@ -142,13 +142,16 @@ export default function RecommendationForm({
             <p className="eyebrow">Silver Screen Club Presents</p>
 
             <h1 className="rec-title">
-              WHAT SHOULD WE<br />
-              <em>SCREEN NEXT?</em>
+              WHAT ARE WE<br />
+              <em>WATCHING THIS TIME?</em>
             </h1>
 
             <p className="rec-sub">
-              Hindi · English · Regional — every genre welcome.<br />
-              Drop a title and let the projector know.
+              (Yes, we&apos;re asking you again. No, we won&apos;t just pick for you.)
+              <br /><br />
+              Hindi. English. Regional. Even that one genre you pretend not to like — all welcome here.
+              <br /><br />
+              Got a title stuck in your head? Whisper it to the group chat before the projector gets impatient and starts playing static.
             </p>
 
             {/* auth area */}
@@ -182,7 +185,7 @@ export default function RecommendationForm({
           <section className="rec-form-section">
             <div className="rec-form-card">
               <div className="reel-no">
-                <span>🎬 Your Recommendation</span>
+                <span>🎬 Freeze Frame On This</span>
               </div>
 
               <form onSubmit={handleSubmit} className="rec-form">
