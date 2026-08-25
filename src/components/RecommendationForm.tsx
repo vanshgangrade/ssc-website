@@ -1,0 +1,242 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { signIn, signOut } from "next-auth/react";
+import { submitRecommendation } from "@/app/actions";
+import "./rec.css";
+
+type SessionSummary = {
+  email: string;
+  name: string | null;
+  image: string | null;
+  isAdmin: boolean;
+} | null;
+
+/* ---------- floating particle effect ---------- */
+function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    const particles: { x: number; y: number; r: number; vx: number; vy: number; a: number }[] = [];
+    const count = 45;
+
+    function resize() {
+      canvas!.width = window.innerWidth;
+      canvas!.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.8 + 0.4,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -(Math.random() * 0.4 + 0.1),
+        a: Math.random() * 0.5 + 0.15,
+      });
+    }
+
+    function draw() {
+      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
+      for (const p of particles) {
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(232,179,65,${p.a})`;
+        ctx!.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.y < -10) {
+          p.y = canvas!.height + 10;
+          p.x = Math.random() * canvas!.width;
+        }
+        if (p.x < -10 || p.x > canvas!.width + 10) {
+          p.x = Math.random() * canvas!.width;
+        }
+      }
+      animId = requestAnimationFrame(draw);
+    }
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, [canvasRef]);
+}
+
+export default function RecommendationForm({
+  session,
+}: {
+  session: SessionSummary;
+}) {
+  const [movieName, setMovieName] = useState("");
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useParticles(canvasRef);
+
+  /* auto-clear success message */
+  useEffect(() => {
+    if (message?.type === "success") {
+      const t = setTimeout(() => setMessage(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!session) {
+      signIn("google");
+      return;
+    }
+    if (!movieName.trim() || pending) return;
+
+    setPending(true);
+    setMessage(null);
+    try {
+      const res = await submitRecommendation(movieName.trim());
+      if (res?.error) {
+        setMessage({ type: "error", text: res.error });
+      } else {
+        setMessage({ type: "success", text: "Your pick has been submitted!" });
+        setMovieName("");
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 600);
+      }
+    } catch {
+      setMessage({ type: "error", text: "Failed to submit. Try again." });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <>
+      {/* background particles */}
+      <canvas ref={canvasRef} className="particle-canvas" />
+
+      {/* filmstrip rails */}
+      <div className="rail left"><div className="rail-holes" /></div>
+      <div className="rail right"><div className="rail-holes" /></div>
+
+      {/* hero section */}
+      <div className="rec-page">
+        <header className="rec-hero">
+          <div className="rec-hero-inner">
+            {/* marquee bulbs */}
+            <div className="marquee-row">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <span className="m-bulb" key={i} style={{ animationDelay: `${i * 0.18}s` }} />
+              ))}
+            </div>
+
+            <p className="eyebrow">Silver Screen Club Presents</p>
+
+            <h1 className="rec-title">
+              WHAT SHOULD WE<br />
+              <em>SCREEN NEXT?</em>
+            </h1>
+
+            <p className="rec-sub">
+              Hindi · English · Regional — every genre welcome.<br />
+              Drop a title and let the projector know.
+            </p>
+
+            {/* auth area */}
+            {session ? (
+              <div className="auth-chip">
+                {session.image && (
+                  <img
+                    src={session.image}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    width={24}
+                    height={24}
+                  />
+                )}
+                <span className="auth-email">{session.email}</span>
+                <button className="auth-signout" onClick={() => signOut()}>
+                  sign out
+                </button>
+              </div>
+            ) : (
+              <button className="ticket-btn glow-btn" onClick={() => signIn("google")}>
+                <span className="ticket-stub" />
+                Sign in to Recommend
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* recommendation form */}
+        {session && (
+          <section className="rec-form-section">
+            <div className="rec-form-card">
+              <div className="reel-no">
+                <span>🎬 Your Recommendation</span>
+              </div>
+
+              <form onSubmit={handleSubmit} className="rec-form">
+                <div className="input-wrap">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={movieName}
+                    onChange={(e) => setMovieName(e.target.value)}
+                    placeholder="Type a movie name..."
+                    disabled={pending}
+                    autoComplete="off"
+                    maxLength={200}
+                    className="rec-input"
+                  />
+                  <div className="input-glow" />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={pending || !movieName.trim()}
+                  className={`submit-btn ${submitted ? "submitted" : ""}`}
+                >
+                  {pending ? (
+                    <span className="spinner" />
+                  ) : submitted ? (
+                    "✓ Submitted!"
+                  ) : (
+                    "Submit Recommendation"
+                  )}
+                </button>
+              </form>
+
+              {message && (
+                <p className={`rec-message ${message.type}`}>
+                  {message.type === "success" ? "🎬 " : "⚠ "}
+                  {message.text}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* footer */}
+        <footer className="rec-footer">
+          <p className="fmark">SILVER SCREEN CLUB</p>
+          <p className="fsub">Every frame tells a story</p>
+          {session?.isAdmin && (
+            <p className="fadmin">
+              <a href="/admin">Admin Panel →</a>
+            </p>
+          )}
+        </footer>
+      </div>
+    </>
+  );
+}

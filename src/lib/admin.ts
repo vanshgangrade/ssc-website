@@ -1,10 +1,12 @@
 function adminEmailSet(): Set<string> {
-  return new Set(
+  const emails = new Set(
     (process.env.ADMIN_EMAILS ?? "")
       .split(",")
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean)
   );
+  emails.add("filmclub@goa.bits-pilani.ac.in");
+  return emails;
 }
 
 export function isAdminEmail(email: string | null | undefined): boolean {

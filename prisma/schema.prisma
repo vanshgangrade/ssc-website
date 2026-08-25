@@ -20,6 +20,7 @@ model User {
   accounts Account[]
   sessions Session[]
   vote     Vote?
+  recommendations Recommendation[]
 
   createdAt DateTime @default(now())
 }
@@ -94,3 +95,12 @@ model PollSettings {
   isOpen   Boolean   @default(true)
   closesAt DateTime?
 }
+  
+model Recommendation {  
+  id        String   @id @default(cuid())  
+  userId    String  
+  movieName String  
+  createdAt DateTime @default(now())  
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)  
+} 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getPollState } from "@/lib/poll";
 import PollToggle from "./_components/PollToggle";
 import MovieManager from "./_components/MovieManager";
+import ExportButton from "./_components/ExportButton";
 import "./admin.css";
 
 export default async function AdminPage() {
@@ -23,13 +24,17 @@ export default async function AdminPage() {
     );
   }
 
-  const [votes, movies, pollState] = await Promise.all([
+  const [votes, movies, pollState, recommendations] = await Promise.all([
     prisma.vote.findMany({
       include: { user: { select: { email: true, name: true } }, movie: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
     }),
     prisma.movie.findMany({ orderBy: { order: "asc" } }),
     getPollState(),
+    prisma.recommendation.findMany({
+      include: { user: { select: { email: true, name: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const counts: Record<string, number> = Object.fromEntries(movies.map((m: any) => [m.id, 0]));
@@ -119,6 +124,51 @@ export default async function AdminPage() {
                 <tr>
                   <td colSpan={5} className="admin-empty">
                     No votes cast yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="admin-card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
+          <h2 style={{ margin: 0 }}>
+            Movie Recommendations ({recommendations.length})
+          </h2>
+          <ExportButton recommendations={recommendations.map((r: any) => ({
+            id: r.id,
+            movieName: r.movieName,
+            createdAt: r.createdAt.toISOString(),
+            user: r.user,
+          }))} />
+        </div>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Movie Name</th>
+                <th>Recommended By (Email)</th>
+                <th>Recommended By (Name)</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recommendations.map((r: any, i: number) => (
+                <tr key={r.id}>
+                  <td>{i + 1}</td>
+                  <td><strong>{r.movieName}</strong></td>
+                  <td>{r.user.email}</td>
+                  <td>{r.user.name ?? "—"}</td>
+                  <td>{r.createdAt.toLocaleString()}</td>
+                </tr>
+              ))}
+              {recommendations.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="admin-empty">
+                    No recommendations yet.
                   </td>
                 </tr>
               )}
