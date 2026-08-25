@@ -209,7 +209,7 @@ export default async function AdminPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
           <h2 style={{ margin: 0 }}>Email Delivery Logs</h2>
           <div style={{ fontSize: "14px", color: "var(--ash)" }}>
-            Resend: {emailLogs.filter(l => l.provider === "resend").length} | ZeptoMail: {emailLogs.filter(l => l.provider === "zeptomail").length}
+            Resend: {emailLogs.filter(l => l.provider === "resend").length} | ZeptoMail: {emailLogs.filter(l => l.provider === "zeptomail").length} | MailerSend: {emailLogs.filter(l => l.provider === "mailersend").length}
           </div>
         </div>
         <EmailTester />

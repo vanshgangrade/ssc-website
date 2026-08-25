@@ -6,9 +6,13 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const ZEPTOMAIL_API_URL = "https://api.zeptomail.in/v1.1/email";
 const zeptoApiKey = process.env.ZEPTO_API_KEY;
 
+const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
+const mailersendApiKey = process.env.MAILERSEND_API_KEY;
+
 /**
  * Attempts to send an email via Resend first. 
  * If it fails (e.g. rate limit reached), it falls back to ZeptoMail.
+ * If ZeptoMail fails, it falls back to MailerSend.
  */
 async function sendEmailWithFallback(to: string, subject: string, htmlbody: string) {
   const from = process.env.EMAIL_FROM;
@@ -17,7 +21,7 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
     return;
   }
 
-  let resendFailed = false;
+  let currentFallback = 1;
 
   // --- Attempt 1: Resend ---
   if (resendApiKey) {
@@ -37,7 +41,6 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
       });
 
       if (resendRes.ok) {
-        // Log success for resend
         await prisma.emailLog.create({
           data: { to, subject, provider: "resend", status: "success" }
         }).catch(e => console.error("Failed to log email:", e));
@@ -45,36 +48,23 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
       }
       
       const errorText = await resendRes.text();
-      console.warn(`Resend failed with status ${resendRes.status}. Falling back to ZeptoMail. Error: ${errorText}`);
-      resendFailed = true;
+      console.warn(`Resend failed with status ${resendRes.status}. Falling back. Error: ${errorText}`);
     } catch (err) {
-      console.warn("Resend request threw an error. Falling back to ZeptoMail.", err);
-      resendFailed = true;
+      console.warn("Resend request threw an error. Falling back.", err);
     }
-  } else {
-    console.warn("RESEND_API_KEY not set, jumping to ZeptoMail fallback.");
-    resendFailed = true;
   }
 
   // --- Attempt 2: ZeptoMail Fallback ---
-  if (resendFailed) {
-    if (!zeptoApiKey) {
-      console.warn("ZEPTO_API_KEY not set — fallback failed.");
-      await prisma.emailLog.create({
-        data: { to, subject, provider: "failed", status: "error", errorMsg: "Missing ZeptoMail key" }
-      }).catch(e => console.error("Failed to log email:", e));
-      return;
-    }
+  // Parse "Name <email@domain.com>" format for providers that need it split
+  let fromAddress = from;
+  let fromName = undefined;
+  const match = from.match(/^(.*?)\s*<(.+)>$/);
+  if (match) {
+    fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
+    fromAddress = match[2].trim();
+  }
 
-    // Parse "Name <email@domain.com>" format for ZeptoMail
-    let fromAddress = from;
-    let fromName = undefined;
-    const match = from.match(/^(.*?)\s*<(.+)>$/);
-    if (match) {
-      fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
-      fromAddress = match[2].trim();
-    }
-
+  if (zeptoApiKey) {
     try {
       const zeptoRes = await fetch(ZEPTOMAIL_API_URL, {
         method: "POST",
@@ -91,24 +81,61 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
         }),
       });
 
-      if (!zeptoRes.ok) {
-        const errorText = await zeptoRes.text();
-        console.error(`ZeptoMail fallback also failed with status ${zeptoRes.status}: ${errorText}`);
-        await prisma.emailLog.create({
-          data: { to, subject, provider: "zeptomail", status: "error", errorMsg: errorText }
-        }).catch(e => console.error("Failed to log email:", e));
-      } else {
-        console.log("Successfully sent email via ZeptoMail fallback.");
+      if (zeptoRes.ok) {
         await prisma.emailLog.create({
           data: { to, subject, provider: "zeptomail", status: "success" }
         }).catch(e => console.error("Failed to log email:", e));
+        return;
       }
+      
+      const errorText = await zeptoRes.text();
+      console.warn(`ZeptoMail failed with status ${zeptoRes.status}. Falling back to MailerSend. Error: ${errorText}`);
     } catch (err) {
-      console.error("ZeptoMail fallback request threw an error:", err);
+      console.warn("ZeptoMail fallback threw an error. Falling back to MailerSend.", err);
+    }
+  }
+
+  // --- Attempt 3: MailerSend Fallback ---
+  if (mailersendApiKey) {
+    try {
+      const mlsnRes = await fetch(MAILERSEND_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          "Authorization": `Bearer ${mailersendApiKey}`,
+        },
+        body: JSON.stringify({
+          from: { email: fromAddress, name: fromName },
+          to: [{ email: to }],
+          subject: subject,
+          html: htmlbody,
+        }),
+      });
+
+      if (mlsnRes.ok) {
+        await prisma.emailLog.create({
+          data: { to, subject, provider: "mailersend", status: "success" }
+        }).catch(e => console.error("Failed to log email:", e));
+        return;
+      }
+
+      const errorText = await mlsnRes.text();
+      console.error(`MailerSend fallback failed with status ${mlsnRes.status}: ${errorText}`);
       await prisma.emailLog.create({
-        data: { to, subject, provider: "zeptomail", status: "error", errorMsg: String(err) }
+        data: { to, subject, provider: "mailersend", status: "error", errorMsg: errorText }
+      }).catch(e => console.error("Failed to log email:", e));
+    } catch (err) {
+      console.error("MailerSend fallback threw an error:", err);
+      await prisma.emailLog.create({
+        data: { to, subject, provider: "mailersend", status: "error", errorMsg: String(err) }
       }).catch(e => console.error("Failed to log email:", e));
     }
+  } else {
+    console.warn("MAILERSEND_API_KEY not set — all fallbacks exhausted.");
+    await prisma.emailLog.create({
+      data: { to, subject, provider: "failed", status: "error", errorMsg: "All providers failed or missing keys" }
+    }).catch(e => console.error("Failed to log email:", e));
   }
 }
 

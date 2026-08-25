@@ -49,6 +49,7 @@ export default function EmailTester() {
       >
         <option value="resend">Resend</option>
         <option value="zeptomail">ZeptoMail</option>
+        <option value="mailersend">MailerSend</option>
       </select>
       <button 
         type="submit" 

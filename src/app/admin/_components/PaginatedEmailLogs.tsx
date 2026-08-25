@@ -42,8 +42,8 @@ export default function PaginatedEmailLogs({ logs }: { logs: EmailLog[] }) {
                     padding: "2px 6px", 
                     borderRadius: "4px", 
                     fontSize: "12px", 
-                    background: l.provider === "resend" ? "rgba(255,255,255,0.1)" : l.provider === "zeptomail" ? "rgba(232, 179, 65, 0.2)" : "rgba(192, 67, 44, 0.2)",
-                    color: l.provider === "zeptomail" ? "var(--marquee)" : l.provider === "failed" ? "var(--ember)" : "white"
+                    background: l.provider === "resend" ? "rgba(255,255,255,0.1)" : l.provider === "zeptomail" ? "rgba(232, 179, 65, 0.2)" : l.provider === "mailersend" ? "rgba(59, 130, 246, 0.2)" : "rgba(192, 67, 44, 0.2)",
+                    color: l.provider === "zeptomail" ? "var(--marquee)" : l.provider === "mailersend" ? "#60a5fa" : l.provider === "failed" ? "var(--ember)" : "white"
                   }}>
                     {l.provider}
                   </span>

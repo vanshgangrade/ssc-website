@@ -65,6 +65,36 @@ export async function POST(req: Request) {
       else errorMsg = await res.text();
     } catch (e: any) { errorMsg = String(e); }
   }
+  else if (provider === "mailersend") {
+    const key = process.env.MAILERSEND_API_KEY;
+    if (!key) return NextResponse.json({ error: "MAILERSEND_API_KEY not set" }, { status: 500 });
+
+    let fromAddress = from;
+    let fromName = undefined;
+    const match = from.match(/^(.*?)\s*<(.+)>$/);
+    if (match) {
+      fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
+      fromAddress = match[2].trim();
+    }
+
+    try {
+      const res = await fetch("https://api.mailersend.com/v1/email", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          "X-Requested-With": "XMLHttpRequest",
+          "Authorization": `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          from: { email: fromAddress, name: fromName },
+          to: [{ email: to }],
+          subject, html: html,
+        }),
+      });
+      if (res.ok) isSuccess = true;
+      else errorMsg = await res.text();
+    } catch (e: any) { errorMsg = String(e); }
+  }
 
   // Log it
   await prisma.emailLog.create({
