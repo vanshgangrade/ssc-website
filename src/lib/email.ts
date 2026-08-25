@@ -66,6 +66,15 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
       return;
     }
 
+    // Parse "Name <email@domain.com>" format for ZeptoMail
+    let fromAddress = from;
+    let fromName = undefined;
+    const match = from.match(/^(.*?)\s*<(.+)>$/);
+    if (match) {
+      fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
+      fromAddress = match[2].trim();
+    }
+
     try {
       const zeptoRes = await fetch(ZEPTOMAIL_API_URL, {
         method: "POST",
@@ -75,7 +84,7 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
           "Authorization": zeptoApiKey,
         },
         body: JSON.stringify({
-          from: { address: from },
+          from: { address: fromAddress, name: fromName },
           to: [{ email_address: { address: to } }],
           subject: subject,
           htmlbody: htmlbody,

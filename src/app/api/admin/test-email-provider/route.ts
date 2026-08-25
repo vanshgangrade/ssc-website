@@ -42,12 +42,21 @@ export async function POST(req: Request) {
     const key = process.env.ZEPTO_API_KEY;
     if (!key) return NextResponse.json({ error: "ZEPTO_API_KEY not set" }, { status: 500 });
 
+    // Parse "Name <email@domain.com>" format for ZeptoMail
+    let fromAddress = from;
+    let fromName = undefined;
+    const match = from.match(/^(.*?)\s*<(.+)>$/);
+    if (match) {
+      fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
+      fromAddress = match[2].trim();
+    }
+
     try {
       const res = await fetch("https://api.zeptomail.in/v1.1/email", {
         method: "POST",
         headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": key },
         body: JSON.stringify({
-          from: { address: from },
+          from: { address: fromAddress, name: fromName },
           to: [{ email_address: { address: to } }],
           subject, htmlbody: html,
         }),
