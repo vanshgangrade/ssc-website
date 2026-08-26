@@ -10,9 +10,9 @@ const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 const mailersendApiKey = process.env.MAILERSEND_API_KEY;
 
 /**
- * Attempts to send an email via ZeptoMail first.
- * If it fails, it falls back to MailerSend.
- * If MailerSend fails, it falls back to Resend.
+ * Attempts to send an email via MailerSend first.
+ * If it fails, it falls back to ZeptoMail.
+ * If ZeptoMail fails, it falls back to Resend.
  */
 async function sendEmailWithFallback(to: string, subject: string, htmlbody: string) {
   const from = process.env.EMAIL_FROM;
@@ -30,39 +30,7 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
     fromAddress = match[2].trim();
   }
 
-  // --- Attempt 1: ZeptoMail ---
-  if (zeptoApiKey) {
-    try {
-      const zeptoRes = await fetch(ZEPTOMAIL_API_URL, {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-          "Authorization": zeptoApiKey,
-        },
-        body: JSON.stringify({
-          from: { address: fromAddress, name: fromName },
-          to: [{ email_address: { address: to } }],
-          subject: subject,
-          htmlbody: htmlbody,
-        }),
-      });
-
-      if (zeptoRes.ok) {
-        await prisma.emailLog.create({
-          data: { to, subject, provider: "zeptomail", status: "success" }
-        }).catch(e => console.error("Failed to log email:", e));
-        return;
-      }
-      
-      const errorText = await zeptoRes.text();
-      console.warn(`ZeptoMail failed with status ${zeptoRes.status}. Falling back to MailerSend. Error: ${errorText}`);
-    } catch (err) {
-      console.warn("ZeptoMail fallback threw an error. Falling back to MailerSend.", err);
-    }
-  }
-
-  // --- Attempt 2: MailerSend ---
+  // --- Attempt 1: MailerSend ---
   if (mailersendApiKey) {
     try {
       const mlsnRes = await fetch(MAILERSEND_API_URL, {
@@ -88,9 +56,41 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
       }
 
       const errorText = await mlsnRes.text();
-      console.error(`MailerSend failed with status ${mlsnRes.status}. Falling back to Resend. Error: ${errorText}`);
+      console.error(`MailerSend failed with status ${mlsnRes.status}. Falling back to ZeptoMail. Error: ${errorText}`);
     } catch (err) {
-      console.error("MailerSend threw an error. Falling back to Resend:", err);
+      console.error("MailerSend threw an error. Falling back to ZeptoMail:", err);
+    }
+  }
+
+  // --- Attempt 2: ZeptoMail ---
+  if (zeptoApiKey) {
+    try {
+      const zeptoRes = await fetch(ZEPTOMAIL_API_URL, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": zeptoApiKey,
+        },
+        body: JSON.stringify({
+          from: { address: fromAddress, name: fromName },
+          to: [{ email_address: { address: to } }],
+          subject: subject,
+          htmlbody: htmlbody,
+        }),
+      });
+
+      if (zeptoRes.ok) {
+        await prisma.emailLog.create({
+          data: { to, subject, provider: "zeptomail", status: "success" }
+        }).catch(e => console.error("Failed to log email:", e));
+        return;
+      }
+      
+      const errorText = await zeptoRes.text();
+      console.warn(`ZeptoMail failed with status ${zeptoRes.status}. Falling back to Resend. Error: ${errorText}`);
+    } catch (err) {
+      console.warn("ZeptoMail fallback threw an error. Falling back to Resend.", err);
     }
   }
 
