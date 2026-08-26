@@ -10,9 +10,9 @@ const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 const mailersendApiKey = process.env.MAILERSEND_API_KEY;
 
 /**
- * Attempts to send an email via Resend first. 
- * If it fails (e.g. rate limit reached), it falls back to ZeptoMail.
- * If ZeptoMail fails, it falls back to MailerSend.
+ * Attempts to send an email via ZeptoMail first.
+ * If it fails, it falls back to MailerSend.
+ * If MailerSend fails, it falls back to Resend.
  */
 async function sendEmailWithFallback(to: string, subject: string, htmlbody: string) {
   const from = process.env.EMAIL_FROM;
@@ -21,40 +21,6 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
     return;
   }
 
-  let currentFallback = 1;
-
-  // --- Attempt 1: Resend ---
-  if (resendApiKey) {
-    try {
-      const resendRes = await fetch(RESEND_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${resendApiKey}`,
-        },
-        body: JSON.stringify({
-          from: from,
-          to: [to],
-          subject: subject,
-          html: htmlbody,
-        }),
-      });
-
-      if (resendRes.ok) {
-        await prisma.emailLog.create({
-          data: { to, subject, provider: "resend", status: "success" }
-        }).catch(e => console.error("Failed to log email:", e));
-        return; // Successfully sent via Resend
-      }
-      
-      const errorText = await resendRes.text();
-      console.warn(`Resend failed with status ${resendRes.status}. Falling back. Error: ${errorText}`);
-    } catch (err) {
-      console.warn("Resend request threw an error. Falling back.", err);
-    }
-  }
-
-  // --- Attempt 2: ZeptoMail Fallback ---
   // Parse "Name <email@domain.com>" format for providers that need it split
   let fromAddress = from;
   let fromName = undefined;
@@ -64,6 +30,7 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
     fromAddress = match[2].trim();
   }
 
+  // --- Attempt 1: ZeptoMail ---
   if (zeptoApiKey) {
     try {
       const zeptoRes = await fetch(ZEPTOMAIL_API_URL, {
@@ -95,7 +62,7 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
     }
   }
 
-  // --- Attempt 3: MailerSend Fallback ---
+  // --- Attempt 2: MailerSend ---
   if (mailersendApiKey) {
     try {
       const mlsnRes = await fetch(MAILERSEND_API_URL, {
@@ -121,18 +88,49 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
       }
 
       const errorText = await mlsnRes.text();
-      console.error(`MailerSend fallback failed with status ${mlsnRes.status}: ${errorText}`);
+      console.error(`MailerSend failed with status ${mlsnRes.status}. Falling back to Resend. Error: ${errorText}`);
+    } catch (err) {
+      console.error("MailerSend threw an error. Falling back to Resend:", err);
+    }
+  }
+
+  // --- Attempt 3: Resend Fallback ---
+  if (resendApiKey) {
+    try {
+      const resendRes = await fetch(RESEND_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${resendApiKey}`,
+        },
+        body: JSON.stringify({
+          from: from,
+          to: [to],
+          subject: subject,
+          html: htmlbody,
+        }),
+      });
+
+      if (resendRes.ok) {
+        await prisma.emailLog.create({
+          data: { to, subject, provider: "resend", status: "success" }
+        }).catch(e => console.error("Failed to log email:", e));
+        return; 
+      }
+      
+      const errorText = await resendRes.text();
+      console.warn(`Resend fallback failed with status ${resendRes.status}. Error: ${errorText}`);
       await prisma.emailLog.create({
-        data: { to, subject, provider: "mailersend", status: "error", errorMsg: errorText }
+        data: { to, subject, provider: "resend", status: "error", errorMsg: errorText }
       }).catch(e => console.error("Failed to log email:", e));
     } catch (err) {
-      console.error("MailerSend fallback threw an error:", err);
+      console.warn("Resend request threw an error.", err);
       await prisma.emailLog.create({
-        data: { to, subject, provider: "mailersend", status: "error", errorMsg: String(err) }
+        data: { to, subject, provider: "resend", status: "error", errorMsg: String(err) }
       }).catch(e => console.error("Failed to log email:", e));
     }
   } else {
-    console.warn("MAILERSEND_API_KEY not set — all fallbacks exhausted.");
+    console.warn("No keys set or all fallbacks exhausted.");
     await prisma.emailLog.create({
       data: { to, subject, provider: "failed", status: "error", errorMsg: "All providers failed or missing keys" }
     }).catch(e => console.error("Failed to log email:", e));
