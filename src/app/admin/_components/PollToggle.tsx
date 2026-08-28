@@ -63,7 +63,7 @@ export default function PollToggle({
     try {
       const res = await fetch("/api/admin/test-email", { method: "POST" });
       const data = await res.json().catch(() => ({}));
-      setEmailStatus(res.ok ? "Sent — check your inbox." : `Failed: ${data.error ?? res.status}`);
+      setEmailStatus(res.ok ? `Sent via ${data.provider} — check your inbox.` : `Failed: ${data.error ?? res.status}`);
     } catch {
       setEmailStatus("Failed: network error");
     }

@@ -5,6 +5,7 @@ import { listPolls } from "@/lib/poll";
 import PollsManager from "./_components/PollsManager";
 import PollToggle from "./_components/PollToggle";
 import MovieManager from "./_components/MovieManager";
+import ForceSignOutButton from "./_components/ForceSignOutButton";
 import "./admin.css";
 
 export default async function AdminPage({
@@ -57,16 +58,19 @@ export default async function AdminPage({
           <p className="admin-eyebrow">Silver Screen Club</p>
           <h1>Admin — Polls</h1>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-        >
-          <button className="admin-btn admin-btn-ghost" type="submit">
-            Sign out
-          </button>
-        </form>
+        <div className="admin-header-actions">
+          <ForceSignOutButton />
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }}
+          >
+            <button className="admin-btn admin-btn-ghost" type="submit">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
       <section className="admin-card">

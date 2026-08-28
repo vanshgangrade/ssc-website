@@ -32,6 +32,19 @@
   letter-spacing: 0.02em;
 }
 
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.force-signout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .admin-card {
   background: var(--void-soft);
   border: 1px solid rgba(232, 179, 65, 0.15);

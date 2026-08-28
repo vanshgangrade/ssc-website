@@ -115,3 +115,15 @@ model Vote {
 
   @@unique([userId, pollId])
 }
+
+// Tracks how many emails each provider has sent on a given UTC day, so the
+// confirmation-email sender can fail over Brevo -> Resend -> ZeptoMail once
+// each provider's daily free-tier quota is used up. See lib/email.ts.
+model EmailProviderUsage {
+  id       String @id @default(cuid())
+  provider String
+  day      String // UTC date as "YYYY-MM-DD"
+  count    Int    @default(0)
+
+  @@unique([provider, day])
+}
