@@ -19,7 +19,7 @@ model User {
 
   accounts Account[]
   sessions Session[]
-  vote     Vote?
+  votes    Vote[]
 
   createdAt DateTime @default(now())
 }
@@ -62,8 +62,32 @@ model VerificationToken {
 
 // --- App models ---
 
+enum PollStatus {
+  DRAFT
+  LIVE
+  CLOSED
+  ARCHIVED
+}
+
+model Poll {
+  id        String     @id @default(cuid())
+  title     String
+  status    PollStatus @default(DRAFT)
+  isOpen    Boolean    @default(true)
+  closesAt  DateTime?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+
+  movies Movie[]
+  votes  Vote[]
+
+  // Only one poll should ever be LIVE at a time — enforced in app code
+  // (poll.ts) via a transaction, not by the schema.
+}
+
 model Movie {
   id        String   @id @default(cuid())
+  pollId    String
   name      String
   meta      String
   tagline   String
@@ -71,26 +95,23 @@ model Movie {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 
+  poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes Vote[]
 }
 
-// One row per user, enforced by the unique userId FK below — this is
-// what physically guarantees "one vote per email" at the database level.
+// One row per (user, poll) pair, enforced by the unique constraint below —
+// this is what physically guarantees "one vote per email per poll".
 model Vote {
   id        String   @id @default(cuid())
-  userId    String   @unique
+  userId    String
+  pollId    String
   movieId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  poll  Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
   movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
-}
 
-// Singleton row (id always "singleton") holding the poll's open/closed state
-// and optional countdown deadline.
-model PollSettings {
-  id       String    @id @default("singleton")
-  isOpen   Boolean   @default(true)
-  closesAt DateTime?
+  @@unique([userId, pollId])
 }

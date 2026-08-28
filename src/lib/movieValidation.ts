@@ -8,6 +8,7 @@ function base64Size(dataUri: string): number {
 }
 
 export const movieInputSchema = z.object({
+  pollId: z.string().min(1, "Poll is required"),
   name: z.string().trim().min(1, "Name is required").max(120),
   meta: z.string().trim().min(1, "Meta is required").max(120),
   tagline: z.string().trim().min(1, "Tagline is required").max(400),

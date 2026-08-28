@@ -16,7 +16,13 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
-export default function MovieManager({ initialMovies }: { initialMovies: EditableMovie[] }) {
+export default function MovieManager({
+  pollId,
+  initialMovies,
+}: {
+  pollId: string;
+  initialMovies: EditableMovie[];
+}) {
   const [movies, setMovies] = useState(initialMovies);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -63,7 +69,7 @@ export default function MovieManager({ initialMovies }: { initialMovies: Editabl
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(editingId ? form : { ...form, pollId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");

@@ -10,9 +10,11 @@ function toLocalInputValue(iso: string | null): string {
 }
 
 export default function PollToggle({
+  pollId,
   initialOpen,
   initialClosesAt,
 }: {
+  pollId: string;
   initialOpen: boolean;
   initialClosesAt: string | null;
 }) {
@@ -27,16 +29,16 @@ export default function PollToggle({
     setError(null);
     startTransition(async () => {
       try {
-        const res = await fetch("/api/admin/poll-status", {
-          method: "POST",
+        const res = await fetch(`/api/admin/polls/${pollId}`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error("Request failed");
         const data = await res.json();
-        setPollOpen(data.isOpen);
-        setClosesAt(data.closesAt);
-        setDeadlineInput(toLocalInputValue(data.closesAt));
+        setPollOpen(data.poll.isOpen);
+        setClosesAt(data.poll.closesAt);
+        setDeadlineInput(toLocalInputValue(data.poll.closesAt));
       } catch {
         setError("Could not update poll settings. Try again.");
       }
@@ -44,7 +46,7 @@ export default function PollToggle({
   }
 
   function toggle() {
-    post({ pollOpen: !pollOpen });
+    post({ isOpen: !pollOpen });
   }
 
   function saveDeadline() {

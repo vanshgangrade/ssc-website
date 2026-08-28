@@ -1,12 +1,17 @@
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPollState } from "@/lib/poll";
+import { listPolls } from "@/lib/poll";
+import PollsManager from "./_components/PollsManager";
 import PollToggle from "./_components/PollToggle";
 import MovieManager from "./_components/MovieManager";
 import "./admin.css";
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ poll?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
@@ -23,14 +28,21 @@ export default async function AdminPage() {
     );
   }
 
-  const [votes, movies, pollState] = await Promise.all([
-    prisma.vote.findMany({
-      include: { user: { select: { email: true, name: true } }, movie: { select: { name: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.movie.findMany({ orderBy: { order: "asc" } }),
-    getPollState(),
-  ]);
+  const polls = await listPolls();
+  const { poll: pollParam } = await searchParams;
+  const livePoll = polls.find((p) => p.status === "LIVE");
+  const selectedPoll = polls.find((p) => p.id === pollParam) ?? livePoll ?? polls[0] ?? null;
+
+  const [votes, movies] = selectedPoll
+    ? await Promise.all([
+        prisma.vote.findMany({
+          where: { pollId: selectedPoll.id },
+          include: { user: { select: { email: true, name: true } }, movie: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.movie.findMany({ where: { pollId: selectedPoll.id }, orderBy: { order: "asc" } }),
+      ])
+    : [[], []];
 
   const counts: Record<string, number> = Object.fromEntries(movies.map((m) => [m.id, 0]));
   for (const v of votes) {
@@ -43,7 +55,7 @@ export default async function AdminPage() {
       <div className="admin-header">
         <div>
           <p className="admin-eyebrow">Silver Screen Club</p>
-          <h1>Admin — Poll Results</h1>
+          <h1>Admin — Polls</h1>
         </div>
         <form
           action={async () => {
@@ -57,75 +69,98 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      <PollToggle
-        initialOpen={pollState.isOpen}
-        initialClosesAt={pollState.closesAt ? pollState.closesAt.toISOString() : null}
-      />
-
       <section className="admin-card">
-        <h2>
-          Standings ({total} vote{total === 1 ? "" : "s"})
-        </h2>
-        <div className="admin-bars">
-          {movies.map((m) => {
-            const pct = total > 0 ? Math.round((counts[m.id] / total) * 100) : 0;
-            return (
-              <div key={m.id} className="admin-bar-row">
-                <div className="admin-bar-label">
-                  <span>{m.name}</span>
-                  <span>
-                    {counts[m.id]} · {pct}%
-                  </span>
-                </div>
-                <div className="admin-bar-track">
-                  <div className="admin-bar-fill" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            );
-          })}
-          {movies.length === 0 && <p className="admin-empty">No movies yet.</p>}
-        </div>
+        <h2>Polls</h2>
+        <PollsManager polls={polls} selectedPollId={selectedPoll?.id ?? null} />
       </section>
 
-      <section className="admin-card">
-        <h2>Movies</h2>
-        <MovieManager initialMovies={movies} />
-      </section>
+      {!selectedPoll && (
+        <section className="admin-card">
+          <p className="admin-empty">Create a poll above to get started.</p>
+        </section>
+      )}
 
-      <section className="admin-card">
-        <h2>Voters</h2>
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Name</th>
-                <th>Vote</th>
-                <th>Cast at</th>
-                <th>Last changed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {votes.map((v) => (
-                <tr key={v.userId}>
-                  <td>{v.user.email}</td>
-                  <td>{v.user.name ?? "—"}</td>
-                  <td>{v.movie.name}</td>
-                  <td>{v.createdAt.toLocaleString()}</td>
-                  <td>{v.updatedAt.toLocaleString()}</td>
-                </tr>
-              ))}
-              {votes.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="admin-empty">
-                    No votes cast yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {selectedPoll && (
+        <>
+          <section className="admin-card">
+            <h2>
+              Managing: {selectedPoll.title}{" "}
+              {selectedPoll.status === "LIVE" && <span className="poll-status-pill live">Live</span>}
+            </h2>
+            <PollToggle
+              key={selectedPoll.id}
+              pollId={selectedPoll.id}
+              initialOpen={selectedPoll.isOpen}
+              initialClosesAt={selectedPoll.closesAt ? selectedPoll.closesAt.toISOString() : null}
+            />
+          </section>
+
+          <section className="admin-card">
+            <h2>
+              Standings ({total} vote{total === 1 ? "" : "s"})
+            </h2>
+            <div className="admin-bars">
+              {movies.map((m) => {
+                const pct = total > 0 ? Math.round((counts[m.id] / total) * 100) : 0;
+                return (
+                  <div key={m.id} className="admin-bar-row">
+                    <div className="admin-bar-label">
+                      <span>{m.name}</span>
+                      <span>
+                        {counts[m.id]} · {pct}%
+                      </span>
+                    </div>
+                    <div className="admin-bar-track">
+                      <div className="admin-bar-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {movies.length === 0 && <p className="admin-empty">No movies yet.</p>}
+            </div>
+          </section>
+
+          <section className="admin-card">
+            <h2>Movies</h2>
+            <MovieManager key={selectedPoll.id} pollId={selectedPoll.id} initialMovies={movies} />
+          </section>
+
+          <section className="admin-card">
+            <h2>Voters</h2>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Vote</th>
+                    <th>Cast at</th>
+                    <th>Last changed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {votes.map((v) => (
+                    <tr key={v.userId}>
+                      <td>{v.user.email}</td>
+                      <td>{v.user.name ?? "—"}</td>
+                      <td>{v.movie.name}</td>
+                      <td>{v.createdAt.toLocaleString()}</td>
+                      <td>{v.updatedAt.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {votes.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="admin-empty">
+                        No votes cast yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }
