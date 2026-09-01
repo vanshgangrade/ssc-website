@@ -10,9 +10,11 @@ function toLocalInputValue(iso: string | null): string {
 }
 
 export default function PollToggle({
+  pollId,
   initialOpen,
   initialClosesAt,
 }: {
+  pollId: string;
   initialOpen: boolean;
   initialClosesAt: string | null;
 }) {
@@ -21,22 +23,21 @@ export default function PollToggle({
   const [deadlineInput, setDeadlineInput] = useState(toLocalInputValue(initialClosesAt));
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [emailStatus, setEmailStatus] = useState<string | null>(null);
 
   function post(body: Record<string, unknown>) {
     setError(null);
     startTransition(async () => {
       try {
-        const res = await fetch("/api/admin/poll-status", {
-          method: "POST",
+        const res = await fetch(`/api/admin/polls/${pollId}`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error("Request failed");
         const data = await res.json();
-        setPollOpen(data.isOpen);
-        setClosesAt(data.closesAt);
-        setDeadlineInput(toLocalInputValue(data.closesAt));
+        setPollOpen(data.poll.isOpen);
+        setClosesAt(data.poll.closesAt);
+        setDeadlineInput(toLocalInputValue(data.poll.closesAt));
       } catch {
         setError("Could not update poll settings. Try again.");
       }
@@ -44,7 +45,7 @@ export default function PollToggle({
   }
 
   function toggle() {
-    post({ pollOpen: !pollOpen });
+    post({ isOpen: !pollOpen });
   }
 
   function saveDeadline() {
@@ -54,17 +55,6 @@ export default function PollToggle({
   function clearDeadline() {
     setDeadlineInput("");
     post({ closesAt: null });
-  }
-
-  async function sendTestEmail() {
-    setEmailStatus("Sending…");
-    try {
-      const res = await fetch("/api/admin/test-email", { method: "POST" });
-      const data = await res.json().catch(() => ({}));
-      setEmailStatus(res.ok ? "Sent — check your inbox." : `Failed: ${data.error ?? res.status}`);
-    } catch {
-      setEmailStatus("Failed: network error");
-    }
   }
 
   return (
@@ -97,13 +87,6 @@ export default function PollToggle({
             </button>
           )}
         </div>
-      </div>
-
-      <div className="poll-test-email">
-        <button className="admin-btn admin-btn-ghost" onClick={sendTestEmail}>
-          Send test email
-        </button>
-        {emailStatus && <span className="admin-email-status">{emailStatus}</span>}
       </div>
     </div>
   );

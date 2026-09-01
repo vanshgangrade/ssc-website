@@ -4,14 +4,14 @@ import { getPollState } from "@/lib/poll";
 import Ballot from "@/components/Ballot";
 
 export default async function Home() {
-  const [session, movies, pollState] = await Promise.all([
-    auth(),
-    prisma.movie.findMany({
-      orderBy: { order: "asc" },
-      select: { id: true, name: true, meta: true, tagline: true, posterUrl: true },
-    }),
-    getPollState(),
-  ]);
+  const [session, pollState] = await Promise.all([auth(), getPollState()]);
+  const movies = pollState.pollId
+    ? await prisma.movie.findMany({
+        where: { pollId: pollState.pollId },
+        orderBy: { order: "asc" },
+        select: { id: true, name: true, meta: true, tagline: true, posterUrl: true },
+      })
+    : [];
 
   const sessionSummary = session?.user
     ? {

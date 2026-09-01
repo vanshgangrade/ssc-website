@@ -197,6 +197,7 @@ h1.title em {
   opacity: 0.75;
 }
 .scrollcue {
+  display: block;
   margin: 52px auto 0;
   width: 22px;
   height: 34px;

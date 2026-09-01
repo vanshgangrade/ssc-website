@@ -2,15 +2,21 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const pollId = new URL(req.url).searchParams.get("pollId");
+  if (!pollId) {
+    return NextResponse.json({ error: "pollId is required" }, { status: 400 });
+  }
+
   const [movies, votes] = await Promise.all([
-    prisma.movie.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true } }),
+    prisma.movie.findMany({ where: { pollId }, orderBy: { order: "asc" }, select: { id: true, name: true } }),
     prisma.vote.findMany({
+      where: { pollId },
       include: { user: { select: { email: true, name: true } }, movie: { select: { name: true } } },
       orderBy: { createdAt: "asc" },
     }),

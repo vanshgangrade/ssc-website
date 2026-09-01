@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { sendViaSpecificProvider } from "@/lib/email";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -8,107 +8,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { to, provider } = await req.json();
+  const { to, provider } = await req.json().catch(() => ({}));
   if (!to || !provider) {
     return NextResponse.json({ error: "Missing to or provider" }, { status: 400 });
   }
 
-  const from = process.env.EMAIL_FROM;
-  if (!from) {
-    return NextResponse.json({ error: "EMAIL_FROM not set on server" }, { status: 500 });
-  }
-
-  const subject = `Test Email from ${provider.toUpperCase()}`;
+  const subject = `Test Email from ${String(provider).toUpperCase()}`;
   const html = `<p>This is a test email sent specifically via ${provider}.</p>`;
 
-  let isSuccess = false;
-  let errorMsg = "";
-
-  if (provider === "resend") {
-    const key = process.env.RESEND_API_KEY;
-    if (!key) return NextResponse.json({ error: "RESEND_API_KEY not set" }, { status: 500 });
-    
-    try {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-        body: JSON.stringify({ from, to: [to], subject, html }),
-      });
-      if (res.ok) isSuccess = true;
-      else errorMsg = await res.text();
-    } catch (e: any) { errorMsg = String(e); }
-  } 
-  else if (provider === "zeptomail") {
-    const key = process.env.ZEPTO_API_KEY;
-    if (!key) return NextResponse.json({ error: "ZEPTO_API_KEY not set" }, { status: 500 });
-
-    // Parse "Name <email@domain.com>" format for ZeptoMail
-    let fromAddress = from;
-    let fromName = undefined;
-    const match = from.match(/^(.*?)\s*<(.+)>$/);
-    if (match) {
-      fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
-      fromAddress = match[2].trim();
-    }
-
-    try {
-      const res = await fetch("https://api.zeptomail.in/v1.1/email", {
-        method: "POST",
-        headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": key },
-        body: JSON.stringify({
-          from: { address: fromAddress, name: fromName },
-          to: [{ email_address: { address: to } }],
-          subject, htmlbody: html,
-        }),
-      });
-      if (res.ok) isSuccess = true;
-      else errorMsg = await res.text();
-    } catch (e: any) { errorMsg = String(e); }
+  const result = await sendViaSpecificProvider(to, subject, html, provider);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.errorMsg }, { status: 500 });
   }
-  else if (provider === "mailersend") {
-    const key = process.env.MAILERSEND_API_KEY;
-    if (!key) return NextResponse.json({ error: "MAILERSEND_API_KEY not set" }, { status: 500 });
-
-    let fromAddress = from;
-    let fromName = undefined;
-    const match = from.match(/^(.*?)\s*<(.+)>$/);
-    if (match) {
-      fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
-      fromAddress = match[2].trim();
-    }
-
-    try {
-      const res = await fetch("https://api.mailersend.com/v1/email", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json", 
-          "X-Requested-With": "XMLHttpRequest",
-          "Authorization": `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          from: { email: fromAddress, name: fromName },
-          to: [{ email: to }],
-          subject, html: html,
-        }),
-      });
-      if (res.ok) isSuccess = true;
-      else errorMsg = await res.text();
-    } catch (e: any) { errorMsg = String(e); }
-  }
-
-  // Log it
-  await prisma.emailLog.create({
-    data: {
-      to, subject,
-      provider: isSuccess ? provider : "failed",
-      status: isSuccess ? "success" : "error",
-      errorMsg: errorMsg || null
-    }
-  }).catch(console.error);
-
-  if (isSuccess) {
-    return NextResponse.json({ success: true });
-  } else {
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
-  }
+  return NextResponse.json({ success: true });
 }

@@ -17,9 +17,9 @@ model User {
   emailVerified DateTime?
   image         String?
 
-  accounts Account[]
-  sessions Session[]
-  vote     Vote?
+  accounts        Account[]
+  sessions        Session[]
+  votes           Vote[]
   recommendations Recommendation[]
 
   createdAt DateTime @default(now())
@@ -63,8 +63,32 @@ model VerificationToken {
 
 // --- App models ---
 
+enum PollStatus {
+  DRAFT
+  LIVE
+  CLOSED
+  ARCHIVED
+}
+
+model Poll {
+  id        String     @id @default(cuid())
+  title     String
+  status    PollStatus @default(DRAFT)
+  isOpen    Boolean    @default(true)
+  closesAt  DateTime?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+
+  movies Movie[]
+  votes  Vote[]
+
+  // Only one poll should ever be LIVE at a time — enforced in app code
+  // (poll.ts) via a transaction, not by the schema.
+}
+
 model Movie {
   id        String   @id @default(cuid())
+  pollId    String
   name      String
   meta      String
   tagline   String
@@ -72,45 +96,58 @@ model Movie {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 
+  poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes Vote[]
 }
 
-// One row per user, enforced by the unique userId FK below — this is
-// what physically guarantees "one vote per email" at the database level.
+// One row per (user, poll) pair, enforced by the unique constraint below —
+// this is what physically guarantees "one vote per email per poll".
 model Vote {
   id        String   @id @default(cuid())
-  userId    String   @unique
+  userId    String
+  pollId    String
   movieId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  poll  Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
   movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pollId])
 }
 
-// Singleton row (id always "singleton") holding the poll's open/closed state
-// and optional countdown deadline.
-model PollSettings {
-  id       String    @id @default("singleton")
-  isOpen   Boolean   @default(true)
-  closesAt DateTime?
-}
-  
-model Recommendation {  
-  id        String   @id @default(cuid())  
-  userId    String  
-  movieName String  
-  createdAt DateTime @default(now())  
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)  
+// Tracks how many emails each provider has sent on a given UTC day, so the
+// confirmation-email sender can fail over Resend -> Brevo -> ZeptoMail once
+// each provider's daily free-tier quota is used up. See lib/email.ts.
+model EmailProviderUsage {
+  id       String @id @default(cuid())
+  provider String
+  day      String // UTC date as "YYYY-MM-DD"
+  count    Int    @default(0)
+
+  @@unique([provider, day])
 }
 
+// Free-text "what should we screen next" suggestions, separate from Movie/Poll.
+model Recommendation {
+  id        String   @id @default(cuid())
+  userId    String
+  movieName String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// One row per confirmation-email attempt (vote or recommendation), regardless
+// of which provider handled it or whether it succeeded — powers the admin
+// "Email Delivery Logs" dashboard.
 model EmailLog {
   id        String   @id @default(cuid())
   to        String
   subject   String
-  provider  String   // "resend" or "zeptomail" or "failed"
-  status    String   // "success" or "error"
+  provider  String // "resend" | "brevo" | "zeptomail" | "failed"
+  status    String // "success" | "error"
   errorMsg  String?
   createdAt DateTime @default(now())
 }

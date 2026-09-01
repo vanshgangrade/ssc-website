@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export default function EmailTester() {
   const [to, setTo] = useState("");
-  const [provider, setProvider] = useState<"resend" | "zeptomail">("resend");
+  const [provider, setProvider] = useState<"resend" | "brevo" | "zeptomail">("resend");
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -48,8 +48,8 @@ export default function EmailTester() {
         style={{ padding: "8px 12px", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.2)", background: "var(--void)", color: "white" }}
       >
         <option value="resend">Resend</option>
+        <option value="brevo">Brevo</option>
         <option value="zeptomail">ZeptoMail</option>
-        <option value="mailersend">MailerSend</option>
       </select>
       <button 
         type="submit" 

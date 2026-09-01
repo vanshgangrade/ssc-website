@@ -1,72 +1,20 @@
-import { prisma } from "./prisma";
+import { Resend } from "resend";
+import { prisma } from "@/lib/prisma";
 
-const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
-const mailersendApiKey = process.env.MAILERSEND_API_KEY;
+// Confirmation emails fail over across providers in this order, each capped
+// at its free-tier daily quota (tracked in EmailProviderUsage, reset by UTC
+// day). Once a provider's count for today hits its limit, the next one is
+// tried; if all are exhausted or unconfigured, the email is dropped (a
+// failed confirmation must never block or fail the vote/recommendation).
+const PROVIDERS: { name: string; dailyLimit: number; send: SendFn }[] = [
+  { name: "resend", dailyLimit: 100, send: sendViaResend },
+  { name: "brevo", dailyLimit: 300, send: sendViaBrevo },
+  { name: "zeptomail", dailyLimit: 100, send: sendViaZeptoMail },
+];
 
-/**
- * Attempts to send an email via MailerSend.
- */
-async function sendEmailWithFallback(to: string, subject: string, htmlbody: string) {
-  const from = process.env.EMAIL_FROM;
-  if (!from) {
-    console.warn("EMAIL_FROM not set — skipping email.");
-    return;
-  }
+type SendResult = { ok: true } | { ok: false; errorMsg: string };
+type SendFn = (to: string, subject: string, html: string) => Promise<SendResult>;
 
-  // Parse "Name <email@domain.com>" format for providers that need it split
-  let fromAddress = from;
-  let fromName = undefined;
-  const match = from.match(/^(.*?)\s*<(.+)>$/);
-  if (match) {
-    fromName = match[1].replace(/^"|"$/g, '').trim() || undefined;
-    fromAddress = match[2].trim();
-  }
-
-  if (!mailersendApiKey) {
-    console.warn("MAILERSEND_API_KEY not set — cannot send email.");
-    await prisma.emailLog.create({
-      data: { to, subject, provider: "failed", status: "error", errorMsg: "Missing MailerSend key" }
-    }).catch(e => console.error("Failed to log email:", e));
-    return;
-  }
-
-  try {
-    const mlsnRes = await fetch(MAILERSEND_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-        "Authorization": `Bearer ${mailersendApiKey}`,
-      },
-      body: JSON.stringify({
-        from: { email: fromAddress, name: fromName },
-        to: [{ email: to }],
-        subject: subject,
-        html: htmlbody,
-      }),
-    });
-
-    if (mlsnRes.ok) {
-      await prisma.emailLog.create({
-        data: { to, subject, provider: "mailersend", status: "success" }
-      }).catch(e => console.error("Failed to log email:", e));
-      return;
-    }
-
-    const errorText = await mlsnRes.text();
-    console.error(`MailerSend failed with status ${mlsnRes.status}. Error: ${errorText}`);
-    await prisma.emailLog.create({
-      data: { to, subject, provider: "mailersend", status: "error", errorMsg: errorText }
-    }).catch(e => console.error("Failed to log email:", e));
-  } catch (err) {
-    console.error("MailerSend threw an error:", err);
-    await prisma.emailLog.create({
-      data: { to, subject, provider: "mailersend", status: "error", errorMsg: String(err) }
-    }).catch(e => console.error("Failed to log email:", e));
-  }
-}
-
-// Best-effort: a failed confirmation email must never block or fail the vote itself.
 export async function sendVoteConfirmationEmail(to: string, movieName: string) {
   const subject = `Your vote is in: ${movieName}`;
   const html = `
@@ -79,7 +27,7 @@ export async function sendVoteConfirmationEmail(to: string, movieName: string) {
       <p style="margin-top:24px; font-size:12px; color:#999;">Silver Screen Club · BITS Pilani, Goa Campus</p>
     </div>
   `;
-  await sendEmailWithFallback(to, subject, html);
+  await sendViaFailoverChain(to, subject, html);
 }
 
 export async function sendRecommendationConfirmationEmail(to: string, movieName: string) {
@@ -94,5 +42,139 @@ export async function sendRecommendationConfirmationEmail(to: string, movieName:
       <p style="margin-top:24px; font-size:12px; color:#999;">Silver Screen Club · BITS Pilani, Goa Campus</p>
     </div>
   `;
-  await sendEmailWithFallback(to, subject, html);
+  await sendViaFailoverChain(to, subject, html);
+}
+
+// Shared by both confirmation senders and the admin "send test email" button,
+// so a test send genuinely exercises the same quota-aware failover. Every
+// attempt (success or failure) is logged to EmailLog, which backs the admin
+// "Email Delivery Logs" dashboard. Returns the provider that succeeded, or
+// null if every provider was skipped/unconfigured/failed.
+export async function sendViaFailoverChain(to: string, subject: string, html: string): Promise<string | null> {
+  for (const provider of PROVIDERS) {
+    const withinQuota = await reserveDailyQuota(provider.name, provider.dailyLimit);
+    if (!withinQuota) continue;
+
+    const result = await provider.send(to, subject, html);
+    if (result.ok) {
+      await logEmail(to, subject, provider.name, "success", null);
+      return provider.name;
+    }
+    console.error(`${provider.name} failed to send to ${to}; trying next provider.`, result.errorMsg);
+    await logEmail(to, subject, provider.name, "error", result.errorMsg);
+  }
+
+  await logEmail(to, subject, "failed", "error", "All providers exhausted, unconfigured, or rejected the request");
+  return null;
+}
+
+// Lets the admin "Email Delivery Logs" test tool force a specific provider,
+// bypassing the failover order (but still subject to that provider's own
+// daily quota) — useful for verifying one provider's credentials in isolation.
+export async function sendViaSpecificProvider(
+  to: string,
+  subject: string,
+  html: string,
+  providerName: string
+): Promise<SendResult> {
+  const provider = PROVIDERS.find((p) => p.name === providerName);
+  if (!provider) return { ok: false, errorMsg: `Unknown provider "${providerName}"` };
+
+  const withinQuota = await reserveDailyQuota(provider.name, provider.dailyLimit);
+  if (!withinQuota) return { ok: false, errorMsg: `${provider.name}'s daily quota is already used up` };
+
+  const result = await provider.send(to, subject, html);
+  await logEmail(to, subject, result.ok ? provider.name : "failed", result.ok ? "success" : "error", result.ok ? null : result.errorMsg);
+  return result;
+}
+
+async function logEmail(to: string, subject: string, provider: string, status: "success" | "error", errorMsg: string | null) {
+  await prisma.emailLog.create({ data: { to, subject, provider, status, errorMsg } }).catch((err) => {
+    console.error("Failed to write EmailLog row:", err);
+  });
+}
+
+// Atomically bumps today's send count for a provider and reports whether
+// this send is still within its daily limit. Ties break in the caller's
+// favor (the row is incremented either way), which only matters for the
+// rare case of many concurrent requests landing on the exact quota edge.
+async function reserveDailyQuota(provider: string, dailyLimit: number): Promise<boolean> {
+  const day = new Date().toISOString().slice(0, 10); // UTC YYYY-MM-DD
+  const usage = await prisma.emailProviderUsage.upsert({
+    where: { provider_day: { provider, day } },
+    create: { provider, day, count: 1 },
+    update: { count: { increment: 1 } },
+  });
+  return usage.count <= dailyLimit;
+}
+
+// "Name <email@domain>" -> { name, email }. All three providers share one
+// EMAIL_FROM env var but want the sender split into parts, not a raw string.
+function parseFrom(from: string): { name?: string; email: string } {
+  const match = from.match(/^(.*?)\s*<(.+)>$/);
+  if (match) {
+    const name = match[1].replace(/^"|"$/g, "").trim();
+    return { name: name || undefined, email: match[2].trim() };
+  }
+  return { email: from.trim() };
+}
+
+async function sendViaResend(to: string, subject: string, html: string): Promise<SendResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (!apiKey || !from) return { ok: false, errorMsg: "RESEND_API_KEY or EMAIL_FROM not set" };
+
+  const resend = new Resend(apiKey);
+  // Resend's SDK resolves normally (doesn't throw) on API-level failures like an
+  // unverified sending domain or a bad key — that only shows up in `error` here.
+  const { error } = await resend.emails.send({ from, to, subject, html });
+  if (error) return { ok: false, errorMsg: error.message ?? "Resend rejected the request" };
+  return { ok: true };
+}
+
+async function sendViaBrevo(to: string, subject: string, html: string): Promise<SendResult> {
+  const apiKey = process.env.BREVO_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (!apiKey || !from) return { ok: false, errorMsg: "BREVO_API_KEY or EMAIL_FROM not set" };
+
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: { "api-key": apiKey, "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      sender: parseFrom(from),
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+
+  if (!res.ok) return { ok: false, errorMsg: await res.text() };
+  return { ok: true };
+}
+
+async function sendViaZeptoMail(to: string, subject: string, html: string): Promise<SendResult> {
+  // Matches the var name already configured in this project's deployment.
+  const apiKey = process.env.ZEPTO_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (!apiKey || !from) return { ok: false, errorMsg: "ZEPTO_API_KEY or EMAIL_FROM not set" };
+
+  const sender = parseFrom(from);
+  const res = await fetch("https://api.zeptomail.in/v1.1/email", {
+    method: "POST",
+    headers: {
+      // ZEPTO_API_KEY is expected to already include the "Zoho-enczapikey " prefix.
+      Authorization: apiKey,
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({
+      from: { address: sender.email, name: sender.name },
+      to: [{ email_address: { address: to } }],
+      subject,
+      htmlbody: html,
+    }),
+  });
+
+  if (!res.ok) return { ok: false, errorMsg: await res.text() };
+  return { ok: true };
 }

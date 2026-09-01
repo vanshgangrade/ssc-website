@@ -39,13 +39,18 @@ const seedMovies = [
 ];
 
 async function main() {
-  const existing = await prisma.movie.count();
+  const existing = await prisma.poll.count();
   if (existing > 0) {
-    console.log(`Movie table already has ${existing} row(s) — skipping seed.`);
+    console.log(`Poll table already has ${existing} row(s) — skipping seed.`);
     return;
   }
-  await prisma.movie.createMany({ data: seedMovies });
-  console.log(`Seeded ${seedMovies.length} movies.`);
+  const poll = await prisma.poll.create({
+    data: { title: "Launch Poll", status: "LIVE" },
+  });
+  await prisma.movie.createMany({
+    data: seedMovies.map((m) => ({ ...m, pollId: poll.id })),
+  });
+  console.log(`Seeded poll "${poll.title}" with ${seedMovies.length} movies.`);
 }
 
 main()
