@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  const counts: Record<string, number> = Object.fromEntries(movies.map((m: any) => [m.id, 0]));
+  const counts: Record<string, number> = Object.fromEntries(movies.map((m) => [m.id, 0]));
   for (const v of votes) {
     if (v.movieId in counts) counts[v.movieId] += 1;
   }
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     total: votes.length,
     movies,
     counts,
-    voters: votes.map((v: any) => ({
+    voters: votes.map((v) => ({
       email: v.user.email,
       name: v.user.name,
       movie: v.movie.name,

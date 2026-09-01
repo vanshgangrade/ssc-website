@@ -19,8 +19,11 @@ export default function ForceSignOutButton() {
     try {
       const res = await fetch("/api/admin/force-signout", { method: "POST" });
       if (!res.ok) throw new Error("Request failed");
-      // This request just deleted the admin's own session row too, so the
-      // reload below will bounce back through /signin like everyone else's.
+      // This request just deleted the admin's own session row too. A full
+      // reload (not router.push) is deliberate — it forces a real request so
+      // the server re-evaluates auth from scratch instead of possibly
+      // serving a client-cached authenticated shell.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = "/";
     } catch {
       setError("Could not force sign-out. Try again.");

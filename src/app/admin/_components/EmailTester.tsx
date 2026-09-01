@@ -26,7 +26,7 @@ export default function EmailTester() {
       } else {
         setMsg("Error: " + (data.error || "Failed to send"));
       }
-    } catch (err) {
+    } catch {
       setMsg("Error submitting request");
     }
     setPending(false);
@@ -44,7 +44,7 @@ export default function EmailTester() {
       />
       <select 
         value={provider} 
-        onChange={e => setProvider(e.target.value as any)}
+        onChange={e => setProvider(e.target.value as "resend" | "brevo" | "zeptomail")}
         style={{ padding: "8px 12px", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.2)", background: "var(--void)", color: "white" }}
       >
         <option value="resend">Resend</option>
