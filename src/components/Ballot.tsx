@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import type { MovieDTO } from "@/lib/movies";
 
+import HeroPosters from "./HeroPosters";
+
 type SessionSummary = {
   email: string;
   name: string | null;
@@ -27,6 +29,7 @@ export default function Ballot({
   const [closesAt] = useState(initialClosesAt);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [playingTrailer, setPlayingTrailer] = useState<string | null>(null);
   const ballotRef = useRef<HTMLDivElement>(null);
   const introRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
@@ -108,8 +111,10 @@ export default function Ballot({
         </div>
       </div>
 
+      <HeroPosters />
+
       <header className="hero">
-        <div className="wrap">
+          <div className="wrap">
           <div className="bulbs">
             {Array.from({ length: 7 }).map((_, i) => (
               <div className="bulb" key={i} />
@@ -168,7 +173,7 @@ export default function Ballot({
           </div>
 
           <div className="ballot">
-            {movies.map((movie, i) => (
+            {movies.slice(0, 3).map((movie, i) => (
               <ReelCard
                 key={movie.id}
                 movie={movie}
@@ -177,6 +182,7 @@ export default function Ballot({
                 isPending={pending === movie.id}
                 disabled={closed || pending !== null}
                 onVote={() => castVote(movie.id)}
+                onPlayTrailer={() => setPlayingTrailer(movie.trailerUrl || null)}
               />
             ))}
             {movies.length === 0 && <p className="admin-empty">No movies on the ballot yet.</p>}
@@ -215,6 +221,11 @@ export default function Ballot({
           </p>
         )}
       </footer>
+
+      {playingTrailer && (
+        <VideoModal url={playingTrailer} onClose={() => setPlayingTrailer(null)} />
+      )}
+
     </>
   );
 }
@@ -226,6 +237,7 @@ function ReelCard({
   isPending,
   disabled,
   onVote,
+  onPlayTrailer,
 }: {
   movie: MovieDTO;
   index: number;
@@ -233,10 +245,13 @@ function ReelCard({
   isPending: boolean;
   disabled: boolean;
   onVote: () => void;
+  onPlayTrailer: () => void;
 }) {
   return (
-    <article className="reel-card" data-film={movie.id}>
-      <p className="reel-no">Reel {String(index + 1).padStart(2, "0")}</p>
+    <article className={`reel-card`} data-film={movie.id}>
+      <div className="reel-header">
+        <p className="reel-no">Reel {String(index + 1).padStart(2, "0")}</p>
+      </div>
       <div className="poster-frame">
         {/* eslint-disable-next-line @next/next/no-img-element -- posters can be admin-uploaded data: URIs, which next/image can't optimize */}
         <img src={movie.posterUrl} alt={`${movie.name} poster`} loading="lazy" />
@@ -244,6 +259,11 @@ function ReelCard({
       <h3 className="film-title">{movie.name}</h3>
       <p className="film-meta">{movie.meta}</p>
       <p className="film-tagline">{movie.tagline}</p>
+      {movie.trailerUrl && (
+        <button className="watch-trailer-btn" onClick={onPlayTrailer}>
+          ▶ Watch Trailer
+        </button>
+      )}
       <div className="vote-row">
         <button
           className="vote-btn"
@@ -257,6 +277,33 @@ function ReelCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function VideoModal({ url, onClose }: { url: string; onClose: () => void }) {
+  // Extract YouTube ID
+  let embedUrl = url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("youtube.com") || parsed.hostname.includes("youtu.be")) {
+      const v = parsed.searchParams.get("v") || parsed.pathname.split("/").pop();
+      if (v) embedUrl = `https://www.youtube.com/embed/${v}?autoplay=1`;
+    }
+  } catch (e) {
+    // leave as is
+  }
+
+  return (
+    <div className="video-modal-backdrop" onClick={onClose}>
+      <div className="video-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="video-modal-close" onClick={onClose}>✕</button>
+        <iframe
+          src={embedUrl}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      </div>
+    </div>
   );
 }
 

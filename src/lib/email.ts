@@ -1,4 +1,5 @@
-import { prisma } from "./prisma";
+import { db } from "@/db";
+import { emailLogs } from "@/db/schema";
 
 const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 const mailersendApiKey = process.env.MAILERSEND_API_KEY;
@@ -24,8 +25,8 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
 
   if (!mailersendApiKey) {
     console.warn("MAILERSEND_API_KEY not set — cannot send email.");
-    await prisma.emailLog.create({
-      data: { to, subject, provider: "failed", status: "error", errorMsg: "Missing MailerSend key" }
+    await db.insert(emailLogs).values({
+      to, subject, provider: "failed", status: "error", errorMsg: "Missing MailerSend key"
     }).catch(e => console.error("Failed to log email:", e));
     return;
   }
@@ -47,21 +48,21 @@ async function sendEmailWithFallback(to: string, subject: string, htmlbody: stri
     });
 
     if (mlsnRes.ok) {
-      await prisma.emailLog.create({
-        data: { to, subject, provider: "mailersend", status: "success" }
+      await db.insert(emailLogs).values({
+        to, subject, provider: "mailersend", status: "success"
       }).catch(e => console.error("Failed to log email:", e));
       return;
     }
 
     const errorText = await mlsnRes.text();
     console.error(`MailerSend failed with status ${mlsnRes.status}. Error: ${errorText}`);
-    await prisma.emailLog.create({
-      data: { to, subject, provider: "mailersend", status: "error", errorMsg: errorText }
+    await db.insert(emailLogs).values({
+      to, subject, provider: "mailersend", status: "error", errorMsg: errorText
     }).catch(e => console.error("Failed to log email:", e));
   } catch (err) {
     console.error("MailerSend threw an error:", err);
-    await prisma.emailLog.create({
-      data: { to, subject, provider: "mailersend", status: "error", errorMsg: String(err) }
+    await db.insert(emailLogs).values({
+      to, subject, provider: "mailersend", status: "error", errorMsg: String(err)
     }).catch(e => console.error("Failed to log email:", e));
   }
 }

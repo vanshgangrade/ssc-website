@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { movies as moviesTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { movieInputSchema } from "@/lib/movieValidation";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,8 +19,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   try {
-    const movie = await prisma.movie.update({ where: { id }, data: parsed.data });
-    return NextResponse.json({ movie });
+    const res = await db.update(moviesTable).set(parsed.data).where(eq(moviesTable.id, id)).returning();
+    if (res.length === 0) throw new Error("Not found");
+    return NextResponse.json({ movie: res[0] });
   } catch {
     return NextResponse.json({ error: "Movie not found" }, { status: 404 });
   }
@@ -32,8 +35,9 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
 
   try {
-    // onDelete: Cascade on Vote.movie means deleting a movie also clears its votes.
-    await prisma.movie.delete({ where: { id } });
+    // onDelete: cascade is set in schema
+    const res = await db.delete(moviesTable).where(eq(moviesTable.id, id)).returning();
+    if (res.length === 0) throw new Error("Not found");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Movie not found" }, { status: 404 });

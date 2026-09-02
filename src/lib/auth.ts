@@ -1,13 +1,14 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "@/lib/prisma";
+import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { db } from "@/db";
 import { isAdminEmail } from "@/lib/admin";
 
 const allowedDomain = (process.env.ALLOWED_EMAIL_DOMAIN ?? "").trim().toLowerCase();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  trustHost: true,
+  adapter: DrizzleAdapter(db),
   session: { strategy: "database" },
   pages: {
     signIn: "/signin",

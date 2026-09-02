@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { emailLogs } from "@/db/schema";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -97,13 +98,11 @@ export async function POST(req: Request) {
   }
 
   // Log it
-  await prisma.emailLog.create({
-    data: {
-      to, subject,
-      provider: isSuccess ? provider : "failed",
-      status: isSuccess ? "success" : "error",
-      errorMsg: errorMsg || null
-    }
+  await db.insert(emailLogs).values({
+    to, subject,
+    provider: isSuccess ? provider : "failed",
+    status: isSuccess ? "success" : "error",
+    errorMsg: errorMsg || null
   }).catch(console.error);
 
   if (isSuccess) {

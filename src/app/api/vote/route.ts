@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { votes, movies as moviesTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { isPollOpen } from "@/lib/poll";
 import { sendVoteConfirmationEmail } from "@/lib/email";
 
@@ -17,7 +19,8 @@ export async function GET() {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
-  const vote = await prisma.vote.findUnique({ where: { userId: session.user.id } });
+  const res = await db.select().from(votes).where(eq(votes.userId, session.user.id)).limit(1);
+  const vote = res[0];
   const pollOpen = await isPollOpen();
 
   return NextResponse.json({
@@ -43,18 +46,19 @@ export async function POST(req: Request) {
   }
 
   const { movieId } = parsed.data;
-  const movie = await prisma.movie.findUnique({ where: { id: movieId } });
+  const mRes = await db.select().from(moviesTable).where(eq(moviesTable.id, movieId)).limit(1);
+  const movie = mRes[0];
   if (!movie) {
     return NextResponse.json({ error: "That movie no longer exists" }, { status: 400 });
   }
 
   // Upsert on the unique userId is what makes "one vote per email" hold even
   // under concurrent requests — a second vote updates the same row, never inserts a new one.
-  const vote = await prisma.vote.upsert({
-    where: { userId: session.user.id },
-    create: { userId: session.user.id, movieId },
-    update: { movieId },
-  });
+  const voteRes = await db.insert(votes)
+    .values({ userId: session.user.id, movieId })
+    .onConflictDoUpdate({ target: votes.userId, set: { movieId, updatedAt: new Date() } })
+    .returning();
+  const vote = voteRes[0];
 
   await sendVoteConfirmationEmail(session.user.email, movie.name);
 

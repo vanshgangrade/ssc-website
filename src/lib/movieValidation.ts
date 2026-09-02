@@ -20,5 +20,12 @@ export const movieInputSchema = z.object({
     .refine((v) => !v.startsWith("data:image/") || base64Size(v) <= MAX_POSTER_BYTES, {
       message: "Poster image is too large (max 3MB)",
     }),
+  trailerUrl: z
+    .string()
+    .trim()
+    .url("Must be a valid URL")
+    .optional()
+    .or(z.literal("")),
+  tmdbId: z.number().int().optional().nullable(),
   order: z.number().int().optional(),
 });

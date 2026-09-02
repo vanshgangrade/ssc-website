@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { movies as moviesTable, votes as votesTable, users, recommendations as recsTable, emailLogs as emailLogsTable, sessions } from "@/db/schema";
+import { desc, asc, eq, sql } from "drizzle-orm";
 import { getPollState } from "@/lib/poll";
 import PollToggle from "./_components/PollToggle";
 import MovieManager from "./_components/MovieManager";
@@ -28,12 +30,21 @@ export default async function AdminPage() {
     );
   }
 
-  const [votes, movies, pollState] = await Promise.all([
-    prisma.vote.findMany({
-      include: { user: { select: { email: true, name: true } }, movie: { select: { name: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.movie.findMany({ orderBy: { order: "asc" } }),
+  const [votesData, movies, pollState] = await Promise.all([
+    db.select({
+      id: votesTable.id,
+      userId: votesTable.userId,
+      movieId: votesTable.movieId,
+      createdAt: votesTable.createdAt,
+      updatedAt: votesTable.updatedAt,
+      user: { email: users.email, name: users.name },
+      movie: { name: moviesTable.name },
+    })
+    .from(votesTable)
+    .innerJoin(users, eq(votesTable.userId, users.id))
+    .innerJoin(moviesTable, eq(votesTable.movieId, moviesTable.id))
+    .orderBy(desc(votesTable.createdAt)),
+    db.select().from(moviesTable).orderBy(asc(moviesTable.order)),
     getPollState(),
   ]);
 
@@ -41,71 +52,35 @@ export default async function AdminPage() {
   let emailLogs: any[] = [];
   let isTableMissing = false;
   try {
-    recommendations = await prisma.recommendation.findMany({
-      include: { user: { select: { email: true, name: true } } },
-      orderBy: { createdAt: "desc" },
-    });
-    emailLogs = await prisma.emailLog.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 100, // show latest 100
-    });
+    recommendations = await db.select({
+      id: recsTable.id,
+      movieName: recsTable.movieName,
+      createdAt: recsTable.createdAt,
+      user: { email: users.email, name: users.name },
+    })
+    .from(recsTable)
+    .innerJoin(users, eq(recsTable.userId, users.id))
+    .orderBy(desc(recsTable.createdAt));
+
+    emailLogs = await db.select().from(emailLogsTable).orderBy(desc(emailLogsTable.createdAt)).limit(100);
   } catch (e) {
     console.error("Failed to fetch auxiliary tables, might be missing:", e);
     isTableMissing = true;
   }
 
   const counts: Record<string, number> = Object.fromEntries(movies.map((m: any) => [m.id, 0]));
-  for (const v of votes) {
+  for (const v of votesData) {
     if (v.movieId in counts) counts[v.movieId] += 1;
   }
-  const total = votes.length;
+  const total = votesData.length;
 
   return (
     <main className="admin-wrap">
       {isTableMissing && (
         <div style={{ background: "var(--ember)", color: "white", padding: "16px", borderRadius: "8px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <strong>Database Migration Required!</strong> The Recommendation table doesn't exist yet.
+            <strong>Database Migration Required!</strong> The tables don't exist yet. Run drizzle-kit push.
           </div>
-          <form action={async () => {
-            "use server";
-            const isPostgres = process.env.DATABASE_URL?.includes("postgres") || process.env.DATABASE_URL?.includes("supabase") || process.env.POSTGRES_URL;
-            if (isPostgres) {
-              await prisma.$executeRawUnsafe(`
-                CREATE TABLE IF NOT EXISTS "Recommendation" (
-                  "id" TEXT NOT NULL,
-                  "userId" TEXT NOT NULL,
-                  "movieName" TEXT NOT NULL,
-                  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  CONSTRAINT "Recommendation_pkey" PRIMARY KEY ("id")
-                );
-              `);
-              await prisma.$executeRawUnsafe(`
-                CREATE TABLE IF NOT EXISTS "EmailLog" (
-                  "id" TEXT NOT NULL,
-                  "to" TEXT NOT NULL,
-                  "subject" TEXT NOT NULL,
-                  "provider" TEXT NOT NULL,
-                  "status" TEXT NOT NULL,
-                  "errorMsg" TEXT,
-                  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  CONSTRAINT "EmailLog_pkey" PRIMARY KEY ("id")
-                );
-              `);
-              // Try to add foreign key, ignore if it already exists or fails
-              try {
-                await prisma.$executeRawUnsafe(`
-                  ALTER TABLE "Recommendation" ADD CONSTRAINT "Recommendation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-                `);
-              } catch (e) {
-                console.error("Failed to add foreign key:", e);
-              }
-            }
-          }}>
-            <button type="submit" style={{ background: "white", color: "var(--ember)", padding: "8px 16px", borderRadius: "4px", fontWeight: "bold" }}>
-              Fix Database Now
-            </button>
-          </form>
         </div>
       )}
 
@@ -120,7 +95,7 @@ export default async function AdminPage() {
               "use server";
               const s = await auth();
               if (s?.user?.isAdmin) {
-                await prisma.session.deleteMany();
+                await db.delete(sessions);
               }
             }}
           >
@@ -178,7 +153,7 @@ export default async function AdminPage() {
 
       <section className="admin-card">
         <h2>Voters</h2>
-        <PaginatedVoters votes={votes.map(v => ({
+        <PaginatedVoters votes={votesData.map(v => ({
           ...v,
           createdAt: v.createdAt.toISOString(),
           updatedAt: v.updatedAt.toISOString(),

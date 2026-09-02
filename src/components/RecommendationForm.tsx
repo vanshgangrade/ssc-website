@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
-import { submitRecommendation } from "@/app/actions";
+import { searchTMDB, submitRecommendation } from "@/app/actions";
+import type { TMDBMovie } from "@/lib/tmdb";
 import "./rec.css";
 
 type SessionSummary = {
@@ -76,11 +77,17 @@ export default function RecommendationForm({
   session: SessionSummary;
 }) {
   const [movieName, setMovieName] = useState("");
+  const [tmdbId, setTmdbId] = useState<number | null>(null);
+  const [results, setResults] = useState<TMDBMovie[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useParticles(canvasRef);
 
@@ -91,6 +98,36 @@ export default function RecommendationForm({
       return () => clearTimeout(t);
     }
   }, [message]);
+
+  async function handleSearch(query: string) {
+    setMovieName(query);
+    setTmdbId(null);
+    if (!query.trim()) {
+      setResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await searchTMDB(query);
+        setResults(res.slice(0, 5));
+        setShowDropdown(true);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  }
+
+  function selectMovie(movie: TMDBMovie) {
+    setMovieName(movie.title + (movie.release_date ? ` (${movie.release_date.split("-")[0]})` : ""));
+    setTmdbId(movie.id);
+    setShowDropdown(false);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -103,12 +140,13 @@ export default function RecommendationForm({
     setPending(true);
     setMessage(null);
     try {
-      const res = await submitRecommendation(movieName.trim());
+      const res = await submitRecommendation(movieName.trim(), tmdbId);
       if (res?.error) {
         setMessage({ type: "error", text: res.error });
       } else {
         setMessage({ type: "success", text: "Your pick has been submitted!" });
         setMovieName("");
+        setTmdbId(null);
         setSubmitted(true);
         setTimeout(() => setSubmitted(false), 600);
       }
@@ -190,18 +228,39 @@ export default function RecommendationForm({
               </div>
 
               <form onSubmit={handleSubmit} className="rec-form">
-                <div className="input-wrap">
+                <div className="input-wrap" style={{ position: "relative" }}>
                   <input
                     ref={inputRef}
                     type="text"
                     value={movieName}
-                    onChange={(e) => setMovieName(e.target.value)}
-                    placeholder="Type a movie name..."
+                    onChange={(e) => handleSearch(e.target.value)}
+                    onFocus={() => { if (results.length > 0) setShowDropdown(true); }}
+                    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                    placeholder="Search a movie..."
                     disabled={pending}
                     autoComplete="off"
                     maxLength={200}
                     className="rec-input"
                   />
+                  {searching && <span className="search-spinner" style={{ position: "absolute", right: 15, top: 15, fontSize: 12, color: "var(--ash)" }}>Searching...</span>}
+                  
+                  {showDropdown && results.length > 0 && (
+                    <div className="autocomplete-dropdown">
+                      {results.map((m) => (
+                        <div key={m.id} className="autocomplete-item" onClick={() => selectMovie(m)}>
+                          {m.poster_path ? (
+                            <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" className="autocomplete-poster" />
+                          ) : (
+                            <div className="autocomplete-poster-placeholder" />
+                          )}
+                          <div>
+                            <div className="autocomplete-title">{m.title}</div>
+                            <div className="autocomplete-year">{m.release_date?.split("-")[0]}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <button

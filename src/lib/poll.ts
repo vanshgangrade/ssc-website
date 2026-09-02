@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { pollSettings } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const SETTINGS_ID = "singleton";
 
@@ -8,7 +10,8 @@ export type PollState = {
 };
 
 async function getSettings(): Promise<PollState> {
-  const settings = await prisma.pollSettings.findUnique({ where: { id: SETTINGS_ID } });
+  const res = await db.select().from(pollSettings).where(eq(pollSettings.id, SETTINGS_ID)).limit(1);
+  const settings = res[0];
   // No row yet means the poll has never been touched — default to open, no deadline.
   return {
     isOpen: settings?.isOpen ?? true,
@@ -29,17 +32,13 @@ export async function isPollOpen(): Promise<boolean> {
 }
 
 export async function setPollOpen(isOpen: boolean): Promise<void> {
-  await prisma.pollSettings.upsert({
-    where: { id: SETTINGS_ID },
-    create: { id: SETTINGS_ID, isOpen },
-    update: { isOpen },
-  });
+  await db.insert(pollSettings)
+    .values({ id: SETTINGS_ID, isOpen })
+    .onConflictDoUpdate({ target: pollSettings.id, set: { isOpen } });
 }
 
 export async function setPollClosesAt(closesAt: Date | null): Promise<void> {
-  await prisma.pollSettings.upsert({
-    where: { id: SETTINGS_ID },
-    create: { id: SETTINGS_ID, closesAt },
-    update: { closesAt },
-  });
+  await db.insert(pollSettings)
+    .values({ id: SETTINGS_ID, closesAt })
+    .onConflictDoUpdate({ target: pollSettings.id, set: { closesAt } });
 }

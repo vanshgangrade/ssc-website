@@ -5,7 +5,7 @@ import type { MovieDTO } from "@/lib/movies";
 
 type EditableMovie = MovieDTO;
 
-const emptyForm = { name: "", meta: "", tagline: "", posterUrl: "" };
+const emptyForm = { name: "", meta: "", tagline: "", posterUrl: "", trailerUrl: "", tmdbId: null as number | null };
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -32,7 +32,7 @@ export default function MovieManager({ initialMovies }: { initialMovies: Editabl
 
   function startEdit(movie: EditableMovie) {
     setEditingId(movie.id);
-    setForm({ name: movie.name, meta: movie.meta, tagline: movie.tagline, posterUrl: movie.posterUrl });
+    setForm({ name: movie.name, meta: movie.meta, tagline: movie.tagline, posterUrl: movie.posterUrl, trailerUrl: movie.trailerUrl || "", tmdbId: movie.tmdbId });
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -144,6 +144,23 @@ export default function MovieManager({ initialMovies }: { initialMovies: Editabl
             value={form.tagline}
             onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))}
             rows={3}
+          />
+        </label>
+        <label>
+          Trailer URL (Optional, YouTube link)
+          <input
+            value={form.trailerUrl || ""}
+            onChange={(e) => setForm((f) => ({ ...f, trailerUrl: e.target.value }))}
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+        </label>
+        <label>
+          TMDB ID (Optional, for rich details)
+          <input
+            type="number"
+            value={form.tmdbId || ""}
+            onChange={(e) => setForm((f) => ({ ...f, tmdbId: e.target.value ? parseInt(e.target.value, 10) : null }))}
+            placeholder="e.g. 575264"
           />
         </label>
         <label>

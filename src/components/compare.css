@@ -1,0 +1,142 @@
+.compare-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 17, 15, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.compare-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  background: #fdfaf5;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  padding: 40px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.compare-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--ash);
+  cursor: pointer;
+}
+
+.compare-title {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 40px;
+  color: var(--ink);
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 40px;
+  letter-spacing: 0.05em;
+}
+
+.compare-grid {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+}
+
+.compare-column {
+  flex: 1;
+  background: white;
+  border: 1px solid #e8e4dc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.compare-poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.compare-movie-title {
+  font-family: var(--font-pt-serif), serif;
+  font-size: 24px;
+  color: var(--ink);
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.compare-meta {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  color: var(--brass);
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.compare-tagline {
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ash);
+  text-align: center;
+  margin: 0 0 20px;
+}
+
+.compare-rich-details {
+  margin-top: 20px;
+  border-top: 1px solid #f3efea;
+  padding-top: 20px;
+  flex: 1;
+}
+
+.compare-stat {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.stat-label {
+  font-family: var(--font-space-mono), monospace;
+  color: var(--ash);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  max-width: 60%;
+}
+
+.compare-overview {
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4a453e;
+}
+
+.compare-loading, .compare-no-details {
+  text-align: center;
+  color: var(--ash);
+  font-style: italic;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .compare-grid {
+    flex-direction: column;
+  }
+}

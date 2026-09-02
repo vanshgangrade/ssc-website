@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { movies } from "@/db/schema";
 
 // Public — film details only, never vote counts.
 export async function GET() {
-  const movies = await prisma.movie.findMany({
-    orderBy: { order: "asc" },
-    select: { id: true, name: true, meta: true, tagline: true, posterUrl: true },
-  });
-  return NextResponse.json({ movies });
+  const moviesRes = await db.select({
+    id: movies.id, name: movies.name, meta: movies.meta, tagline: movies.tagline, posterUrl: movies.posterUrl
+  }).from(movies).orderBy(movies.order);
+  return NextResponse.json({ movies: moviesRes });
 }

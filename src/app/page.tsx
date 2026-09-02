@@ -1,15 +1,15 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { movies as moviesTable } from "@/db/schema";
 import { getPollState } from "@/lib/poll";
 import Ballot from "@/components/Ballot";
 
 export default async function Home() {
   const [session, movies, pollState] = await Promise.all([
     auth(),
-    prisma.movie.findMany({
-      orderBy: { order: "asc" },
-      select: { id: true, name: true, meta: true, tagline: true, posterUrl: true },
-    }),
+    db.select({
+      id: moviesTable.id, name: moviesTable.name, meta: moviesTable.meta, tagline: moviesTable.tagline, posterUrl: moviesTable.posterUrl, trailerUrl: moviesTable.trailerUrl, tmdbId: moviesTable.tmdbId
+    }).from(moviesTable).orderBy(moviesTable.order),
     getPollState(),
   ]);
 
