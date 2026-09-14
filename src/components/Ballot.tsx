@@ -209,6 +209,9 @@ export default function Ballot({
       <footer>
         <p className="fmark">SSC</p>
         <p className="fsub">Silver Screen Club · BITS Pilani, Goa Campus</p>
+        <p className="fadmin">
+          <a href="/inductions">Join the crew — inductions</a>
+        </p>
         {session?.isAdmin && (
           <p className="fadmin">
             <a href="/admin">Admin panel</a>

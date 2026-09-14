@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
+import { departmentName } from "@/lib/inductions/questions";
 
 // Confirmation emails fail over across providers in this order, each capped
 // at its free-tier daily quota (tracked in EmailProviderUsage, reset by UTC
@@ -43,6 +44,39 @@ export async function sendRecommendationConfirmationEmail(to: string, movieName:
     </div>
   `;
   await sendViaFailoverChain(to, subject, html);
+}
+
+export async function sendApplicationConfirmationEmail(
+  to: string,
+  fullName: string,
+  departments: string[],
+  applicationId: string
+) {
+  const subject = "Your SSC crew application is in";
+  const list = departments.map((d) => departmentName(d)).join(", ");
+  const ref = applicationId.slice(-8).toUpperCase();
+  const html = `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+      <p style="letter-spacing:.2em; text-transform:uppercase; font-size:11px; color:#8f8779;">Silver Screen Club</p>
+      <h2 style="margin:8px 0 16px;">Application received</h2>
+      <p>Thanks, ${escapeHtml(fullName)} — your crew induction application is in.</p>
+      <p style="margin:12px 0;"><strong>Departments:</strong> ${escapeHtml(list)}</p>
+      <p style="margin:12px 0;"><strong>Reference:</strong> ${ref}</p>
+      <p style="color:#555;">Next up is the task round. Watch this inbox — every update from here on comes by email.</p>
+      <p style="margin-top:24px; font-size:12px; color:#999;">Silver Screen Club · BITS Pilani, Goa Campus</p>
+    </div>
+  `;
+  await sendViaFailoverChain(to, subject, html);
+}
+
+// Applicant-supplied text goes into an HTML email, so escape it rather than
+// trusting a name to be free of angle brackets.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 // Shared by both confirmation senders and the admin "send test email" button,

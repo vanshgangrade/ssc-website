@@ -39,6 +39,10 @@ src/app/signin/page.tsx      Google sign-in page
 src/app/admin/page.tsx       admin dashboard (protected, server-rendered)
 src/app/api/vote/route.ts    cast/read your own vote
 src/app/api/admin/*          admin-only stats + poll open/close toggle
+src/lib/inductions/*         crew inductions: question bank, validation, cycle gate
+src/app/inductions/*         public induction landing page + multi-step form
+src/app/admin/inductions/*   admin review panel (filters, detail drawer, CSV)
+src/app/api/inductions/*     application submit endpoint
 public/posters/*.jpg         poster images (extracted from the original design)
 ```
 
@@ -110,6 +114,51 @@ automatically after `migrate dev`. Movies are fully editable afterwards from
 > won't carry over — fine for a poll that hasn't gone live yet.
 
 Visit `http://localhost:3000`.
+
+## Crew inductions (`/inductions`)
+
+A Google-Form-shaped application flow that lives on the site instead of on
+Google Forms, with an admin review panel behind it.
+
+- **Applicant flow** — `/inductions` is a landing page (departments, process,
+  FAQ) with the form inlined. Sign-in is Google OAuth, same as voting, so one
+  person gets one application. The form runs in four steps (details →
+  department questions → general questions → review) and saves a draft to
+  `sessionStorage`, so a refresh or a stray back-button doesn't cost anything.
+- **One application per person** — enforced by the database, not by trust:
+  `Application` is unique on both `(cycleId, userId)` and `(cycleId, bitsId)`,
+  so neither a second submit nor a second Google account gets through.
+- **Open/closed** — the form only accepts submissions while the current cycle
+  is open *and* its deadline hasn't passed. The page gates on this and
+  `/api/inductions/apply` checks it again, so a tab left open past the
+  deadline can't sneak a submission in.
+- **Confirmation email** — sent through the same quota-aware failover chain as
+  vote confirmations (Resend → Brevo → ZeptoMail), and logged to `EmailLog`. A
+  failed email never fails the application.
+- **Admin** — `/admin/inductions`: create cycles, open/close the form, set a
+  deadline, filter by status and department, search, open any application,
+  set a status with a note, and download a CSV (one column per question).
+
+### Changing the questions
+
+Everything asked is in `src/lib/inductions/questions.ts` — departments, the
+general question bank, and per-department questions. Edit that one file and
+both the form and the admin panel follow. Question types are `short`, `long`,
+`choice`, and `multi`.
+
+Two rules when editing between cycles:
+
+- Keep a question's `id` stable if you want its answers to stay comparable
+  across cycles — answers are stored keyed by `id`.
+- Give a **new** question a **new** `id`. Reusing an old id on a reworded
+  question makes past answers look like replies to the new wording.
+
+### Starting a cycle
+
+Applications are always scoped to an `InductionCycle`, so next semester's
+drive starts clean without touching this one's data. In `/admin/inductions`,
+create a cycle (it starts closed), set a deadline if you want one, then open
+it. The newest cycle is the one `/inductions` shows.
 
 ## Deploying to Vercel
 

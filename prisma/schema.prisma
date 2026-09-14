@@ -21,6 +21,7 @@ model User {
   sessions        Session[]
   votes           Vote[]
   recommendations Recommendation[]
+  applications    Application[]
 
   createdAt DateTime @default(now())
 }
@@ -150,4 +151,68 @@ model EmailLog {
   status    String // "success" | "error"
   errorMsg  String?
   createdAt DateTime @default(now())
+}
+
+// --- Crew inductions ---
+
+// A single induction drive (e.g. "Crew Inductions 2026"). Applications are
+// always scoped to one cycle, so next semester's drive starts clean without
+// touching this one's data. Only one cycle should be open at a time —
+// enforced in app code (lib/inductions/cycle.ts), not by the schema.
+model InductionCycle {
+  id        String    @id @default(cuid())
+  title     String
+  // The public form only accepts submissions while isOpen is true AND
+  // closesAt (if set) is in the future.
+  isOpen    Boolean   @default(false)
+  closesAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  applications Application[]
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  SHORTLISTED
+  WAITLISTED
+  REJECTED
+  ACCEPTED
+}
+
+// One row per applicant per cycle. Both unique constraints matter: userId
+// stops the same Google account applying twice, bitsId stops one person
+// applying twice from two Google accounts.
+model Application {
+  id      String @id @default(cuid())
+  cycleId String
+  userId  String
+
+  fullName    String
+  phone       String
+  bitsEmail   String
+  bitsId      String
+  yearOfStudy String
+  hostel      String?
+  // Crew departments the applicant is applying to, most-preferred first.
+  departments String[]
+
+  // Snapshot of the answered question bank: [{ id, section, prompt, type, answer }].
+  // Stored denormalised on purpose — questions can be reworded between cycles
+  // without rewriting what past applicants were actually asked.
+  answers Json
+
+  status     ApplicationStatus @default(SUBMITTED)
+  reviewNote String?
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cycle InductionCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cycleId, userId])
+  @@unique([cycleId, bitsId])
+  @@index([cycleId, status])
 }
