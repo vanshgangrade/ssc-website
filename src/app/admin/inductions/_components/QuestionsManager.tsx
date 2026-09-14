@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  DEPARTMENTS,
   QUESTION_TYPE_LABELS,
-  departmentName,
+  VERTICALS,
+  verticalName,
   type Question,
   type QuestionType,
 } from "@/lib/inductions/questions";
@@ -152,7 +152,7 @@ export default function QuestionsManager({
     await call("/api/admin/inductions/questions", "PATCH", { cycleId, action: "reset" });
   }
 
-  function toggleDept(id: string) {
+  function toggleVertical(id: string) {
     setDraft((d) => ({
       ...d,
       onlyFor: d.onlyFor.includes(id) ? d.onlyFor.filter((x) => x !== id) : [...d.onlyFor, id],
@@ -168,8 +168,8 @@ export default function QuestionsManager({
         Questions — {cycleTitle} <span className="ia-count">({questions.length})</span>
       </h2>
       <p className="admin-empty" style={{ textAlign: "left", padding: "0 0 14px" }}>
-        These are the questions applicants see on /inductions. A question with no department
-        attached is asked of everyone; otherwise only applicants who picked one of its departments
+        These are the questions applicants see on /inductions. A question with no vertical
+        attached is asked of everyone; otherwise only applicants who picked one of its verticals
         see it.
         {hasApplications && " Applications have already come in — edits from here on won't change what past applicants were asked."}
       </p>
@@ -203,7 +203,7 @@ export default function QuestionsManager({
                 {q.required ? " · required" : " · optional"}
                 {q.maxLength ? ` · max ${q.maxLength} chars` : ""}
                 {" · "}
-                {q.onlyFor.length === 0 ? "everyone" : q.onlyFor.map(departmentName).join(", ")}
+                {q.onlyFor.length === 0 ? "everyone" : q.onlyFor.map(verticalName).join(", ")}
               </p>
               {q.options.length > 0 && <p className="iq-options">{q.options.join(" · ")}</p>}
             </div>
@@ -324,18 +324,18 @@ export default function QuestionsManager({
           <div className="ind-field">
             <span className="ind-label">Ask this of</span>
             <p className="ind-hint">
-              Leave all unticked to ask everyone. Tick departments to ask it only of applicants who
+              Leave all unticked to ask everyone. Tick verticals to ask it only of applicants who
               picked one of them.
             </p>
             <div className="iq-depts">
-              {DEPARTMENTS.map((d) => (
+              {VERTICALS.map((d) => (
                 <button
                   key={d.id}
                   type="button"
                   className="ind-option"
                   data-selected={draft.onlyFor.includes(d.id)}
                   aria-pressed={draft.onlyFor.includes(d.id)}
-                  onClick={() => toggleDept(d.id)}
+                  onClick={() => toggleVertical(d.id)}
                 >
                   <span className="ind-tick ind-tick-box" aria-hidden="true" />
                   {d.name}

@@ -1,4 +1,4 @@
-// Crew departments, question types, and the starter question bank.
+// Club verticals, question types, and the starter question bank.
 //
 // The live questions are NOT here any more — they live in the
 // InductionQuestion table and are edited from /admin/inductions. What's below
@@ -19,7 +19,7 @@ export type Question = {
   maxLength: number | null;
   /**
    * Empty means everyone answers it. Otherwise only applicants who picked one
-   * of these department ids see the question.
+   * of these vertical ids see the question.
    */
   onlyFor: string[];
 };
@@ -27,52 +27,37 @@ export type Question = {
 /** A question with no database identity yet — the shape of the seed bank. */
 export type QuestionSeed = Omit<Question, "id">;
 
-export type Department = {
+export type Vertical = {
   id: string;
   name: string;
   blurb: string;
 };
 
-// Crew departments an applicant can apply to. `id` values are stored on every
+// The verticals an applicant can apply to. `id` values are stored on every
 // application and referenced by each question's `onlyFor`, so renaming `name`
 // is safe but changing `id` orphans existing data.
-export const DEPARTMENTS: Department[] = [
+export const VERTICALS: Vertical[] = [
   {
-    id: "direction",
-    name: "Direction & Writing",
-    blurb: "Shape the story — scripts, shot lists, and calling the shots on set.",
-  },
-  {
-    id: "cinematography",
-    name: "Cinematography",
-    blurb: "Camera, lighting, and framing. The people who decide how it looks.",
-  },
-  {
-    id: "editing",
-    name: "Editing & VFX",
-    blurb: "Cut the footage into something worth sitting through. Colour, titles, effects.",
-  },
-  {
-    id: "sound",
-    name: "Sound & Music",
-    blurb: "Production sound, mixing, scoring, and the foley nobody notices until it's wrong.",
-  },
-  {
-    id: "production",
-    name: "Production & Logistics",
-    blurb: "Schedules, permissions, equipment, budgets — the reason a shoot actually happens.",
+    id: "sponsorships",
+    name: "Sponsorships & Partnerships",
+    blurb: "Bring in the brands and budgets that keep screenings running — outreach, pitches, and follow-through.",
   },
   {
     id: "design",
     name: "Design & Publicity",
-    blurb: "Posters, socials, screening nights, and making the campus show up.",
+    blurb: "Posters, socials, screening nights, and making the campus actually show up.",
+  },
+  {
+    id: "tech",
+    name: "Tech & Web Development",
+    blurb: "Build and run the things this club lives on — the website, the tooling, the screening-night setup.",
   },
 ];
 
-export const DEPARTMENT_IDS = DEPARTMENTS.map((d) => d.id);
+export const VERTICAL_IDS = VERTICALS.map((v) => v.id);
 
-export function departmentName(id: string): string {
-  return DEPARTMENTS.find((d) => d.id === id)?.name ?? id;
+export function verticalName(id: string): string {
+  return VERTICALS.find((v) => v.id === id)?.name ?? id;
 }
 
 export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -82,62 +67,27 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   multi: "Checkboxes (pick many)",
 };
 
-export const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"];
+export const YEARS = ["1st Year", "2nd Year"];
 
 /** What a brand-new cycle starts with, in order. Edit these in the admin UI. */
 export const DEFAULT_QUESTIONS: QuestionSeed[] = [
   {
-    prompt: "Pick any everyday campus moment and describe how you'd shoot it as a one-minute scene.",
+    prompt: "Pitch us on a brand you'd approach for a screening, and how you'd open that conversation.",
     type: "long",
-    hint: "Mess queue, last bus, 2 a.m. wing corridor — whatever. Tell us the shots.",
+    hint: "Any brand — local café, a startup, a campus favourite. We care about the approach, not the name.",
     options: [],
     required: true,
     maxLength: 2000,
-    onlyFor: ["direction"],
+    onlyFor: ["sponsorships"],
   },
   {
-    prompt: "What camera or lighting gear have you used, and what would you want to learn here?",
+    prompt: "Have you done outreach, sponsorship or partnership work before? Tell us what happened.",
     type: "long",
-    hint: "Phone cameras absolutely count.",
+    hint: "Fests, clubs, school, a side project — anything counts. 'Not yet' is a fine answer.",
     options: [],
-    required: true,
+    required: false,
     maxLength: 1500,
-    onlyFor: ["cinematography"],
-  },
-  {
-    prompt: "Which editing or VFX tools do you know?",
-    type: "multi",
-    hint: null,
-    options: [
-      "Premiere Pro",
-      "DaVinci Resolve",
-      "Final Cut Pro",
-      "After Effects",
-      "CapCut / mobile editors",
-      "Blender",
-      "None yet — happy to learn",
-    ],
-    required: true,
-    maxLength: null,
-    onlyFor: ["editing"],
-  },
-  {
-    prompt: "Tell us about your experience with sound — recording, mixing, or playing music.",
-    type: "long",
-    hint: null,
-    options: [],
-    required: true,
-    maxLength: 1500,
-    onlyFor: ["sound"],
-  },
-  {
-    prompt: "Your shoot is in two hours, the location permission just fell through. What do you do?",
-    type: "long",
-    hint: "We're looking at how you think, not for a textbook answer.",
-    options: [],
-    required: true,
-    maxLength: 1500,
-    onlyFor: ["production"],
+    onlyFor: ["sponsorships"],
   },
   {
     prompt: "Which design or publicity tools do you work with?",
@@ -149,6 +99,7 @@ export const DEFAULT_QUESTIONS: QuestionSeed[] = [
       "Figma",
       "Canva",
       "InDesign",
+      "Video editing",
       "Social media management",
       "None yet — happy to learn",
     ],
@@ -157,7 +108,43 @@ export const DEFAULT_QUESTIONS: QuestionSeed[] = [
     onlyFor: ["design"],
   },
   {
-    prompt: "Why do you want to be on SSC crew?",
+    prompt: "Link us to something you've designed, or describe a poster you'd make for our next screening.",
+    type: "long",
+    hint: "A link is ideal — make sure it's viewable by anyone. Words are fine too.",
+    options: [],
+    required: true,
+    maxLength: 1500,
+    onlyFor: ["design"],
+  },
+  {
+    prompt: "Which of these have you worked with?",
+    type: "multi",
+    hint: null,
+    options: [
+      "HTML / CSS",
+      "JavaScript or TypeScript",
+      "React / Next.js",
+      "Python",
+      "Databases (SQL)",
+      "Git / GitHub",
+      "Design tools (Figma)",
+      "None yet — happy to learn",
+    ],
+    required: true,
+    maxLength: null,
+    onlyFor: ["tech"],
+  },
+  {
+    prompt: "Tell us about something you've built, or something on this site you'd change first.",
+    type: "long",
+    hint: "A repo link, a deployed thing, a class project — or just a clear opinion about this website.",
+    options: [],
+    required: true,
+    maxLength: 2000,
+    onlyFor: ["tech"],
+  },
+  {
+    prompt: "Why do you want to join Silver Screen Club?",
     type: "long",
     hint: "Two or three honest sentences beat a paragraph of adjectives. ~150 words.",
     options: [],
@@ -175,25 +162,7 @@ export const DEFAULT_QUESTIONS: QuestionSeed[] = [
     onlyFor: [],
   },
   {
-    prompt: "Any prior experience with film, video, theatre, design, or audio?",
-    type: "long",
-    hint: "Totally fine to write 'none' — we induct beginners every cycle.",
-    options: [],
-    required: false,
-    maxLength: 1500,
-    onlyFor: [],
-  },
-  {
-    prompt: "Link to anything you've made (Drive, YouTube, Instagram, Behance…)",
-    type: "short",
-    hint: "Optional. Make sure the link is viewable by anyone.",
-    options: [],
-    required: false,
-    maxLength: 500,
-    onlyFor: [],
-  },
-  {
-    prompt: "Roughly how many hours a week can you give to crew work?",
+    prompt: "Roughly how many hours a week can you give the club?",
     type: "choice",
     hint: null,
     options: ["Under 3 hours", "3–6 hours", "6–10 hours", "10+ hours"],
@@ -212,9 +181,9 @@ export const DEFAULT_QUESTIONS: QuestionSeed[] = [
   },
 ];
 
-/** Questions tied to a department the applicant picked, in bank order. */
-export function departmentQuestions(questions: Question[], departments: string[]): Question[] {
-  return questions.filter((q) => q.onlyFor.length > 0 && q.onlyFor.some((d) => departments.includes(d)));
+/** Questions tied to a vertical the applicant picked, in bank order. */
+export function verticalQuestions(questions: Question[], verticals: string[]): Question[] {
+  return questions.filter((q) => q.onlyFor.length > 0 && q.onlyFor.some((v) => verticals.includes(v)));
 }
 
 /** Questions everyone answers, in bank order. */
@@ -222,7 +191,7 @@ export function generalQuestions(questions: Question[]): Question[] {
   return questions.filter((q) => q.onlyFor.length === 0);
 }
 
-/** Everything this applicant should answer — department questions first. */
-export function questionsFor(questions: Question[], departments: string[]): Question[] {
-  return [...departmentQuestions(questions, departments), ...generalQuestions(questions)];
+/** Everything this applicant should answer — vertical questions first. */
+export function questionsFor(questions: Question[], verticals: string[]): Question[] {
+  return [...verticalQuestions(questions, verticals), ...generalQuestions(questions)];
 }

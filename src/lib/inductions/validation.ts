@@ -1,12 +1,14 @@
 import { z } from "zod";
-import { DEPARTMENT_IDS, YEARS, questionsFor, type Question } from "./questions";
+import { VERTICAL_IDS, YEARS, questionsFor, type Question } from "./questions";
 
 // Indian mobile numbers: optional +91/91/0 prefix, then 10 digits starting 6-9.
 // Accepts "+91 98765 43210", "09876543210", "9876543210" — stores the bare 10.
 const INDIAN_PHONE_RE = /^(?:\+91|91|0)?[\s-]?([6-9]\d{9})$/;
 
-// BITS Goa student email: f + 8 digits @goa.bits-pilani.ac.in
-const BITS_EMAIL_RE = /^[fF][0-9]{8}@goa\.bits-pilani\.ac\.in$/;
+// BITS Goa student email: f + 8 digits @goa.bits-pilani.ac.in. No longer asked
+// for — it is taken from the signed-in Google account — but still checked on
+// the server before an application is written.
+export const BITS_EMAIL_RE = /^[fF][0-9]{8}@goa\.bits-pilani\.ac\.in$/;
 
 // 12 alphanumeric characters then G, e.g. 2024A7PS0123G.
 const BITS_ID_RE = /^[0-9A-Za-z]{12}[gG]$/;
@@ -22,22 +24,16 @@ export const basicsSchema = z.object({
     .trim()
     .regex(INDIAN_PHONE_RE, "Enter a valid 10-digit Indian mobile number.")
     .transform((val) => val.match(INDIAN_PHONE_RE)?.[1] ?? val),
-  bitsEmail: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(BITS_EMAIL_RE, "Use your BITS Goa email — e.g. f20241234@goa.bits-pilani.ac.in"),
   bitsId: z
     .string()
     .trim()
     .toUpperCase()
     .regex(BITS_ID_RE, "BITS ID is 12 characters followed by G, e.g. 2024A7PS0123G"),
   yearOfStudy: z.enum(YEARS as [string, ...string[]], { message: "Select your year of study." }),
-  hostel: z.string().trim().max(60).optional().or(z.literal("")),
-  departments: z
-    .array(z.enum(DEPARTMENT_IDS as [string, ...string[]]))
-    .min(1, "Pick at least one department.")
-    .max(3, "Pick at most three — tell us where you'd actually spend your time."),
+  verticals: z
+    .array(z.enum(VERTICAL_IDS as [string, ...string[]]))
+    .min(1, "Pick at least one vertical.")
+    .max(3, "Pick at most three."),
 });
 
 export type Basics = z.infer<typeof basicsSchema>;
@@ -67,16 +63,16 @@ export function isBlank(value: string | string[] | undefined): boolean {
 
 /**
  * Checks the answer map against the cycle's question bank for the chosen
- * departments and returns the answers to store, in the order they were asked.
+ * verticals and returns the answers to store, in the order they were asked.
  * Runs on the client for inline errors and again on the server, which is the
  * one that counts.
  */
 export function validateAnswers(
   bank: Question[],
-  departments: string[],
+  verticals: string[],
   answers: Record<string, string | string[]>
 ): { ok: true; stored: StoredAnswer[] } | { ok: false; errors: Record<string, string> } {
-  const questions = questionsFor(bank, departments);
+  const questions = questionsFor(bank, verticals);
   const errors: Record<string, string> = {};
   const stored: StoredAnswer[] = [];
 
@@ -122,7 +118,7 @@ export const questionInputSchema = z.object({
   options: z.array(z.string().trim().min(1).max(200)).max(30).default([]),
   required: z.boolean().default(true),
   maxLength: z.number().int().min(10).max(10000).nullable().optional(),
-  onlyFor: z.array(z.enum(DEPARTMENT_IDS as [string, ...string[]])).max(10).default([]),
+  onlyFor: z.array(z.enum(VERTICAL_IDS as [string, ...string[]])).max(10).default([]),
 }).refine(
   (q) => (q.type === "choice" || q.type === "multi" ? q.options.length >= 2 : true),
   { message: "Give the applicant at least two options to pick from.", path: ["options"] }

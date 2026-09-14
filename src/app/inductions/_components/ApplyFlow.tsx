@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  DEPARTMENTS,
+  VERTICALS,
   YEARS,
-  departmentName,
-  departmentQuestions,
   generalQuestions,
+  verticalName,
+  verticalQuestions,
   type Question,
 } from "@/lib/inductions/questions";
 import { basicsSchema, validateAnswers } from "@/lib/inductions/validation";
@@ -17,15 +17,13 @@ type Value = string | string[];
 type Draft = {
   fullName: string;
   phone: string;
-  bitsEmail: string;
   bitsId: string;
   yearOfStudy: string;
-  hostel: string;
-  departments: string[];
+  verticals: string[];
   answers: Record<string, Value>;
 };
 
-const STEPS = ["Your details", "Department", "About you", "Review"] as const;
+const STEPS = ["Your details", "Your vertical", "About you", "Review"] as const;
 
 const DRAFT_KEY = "ssc-induction-draft-v1";
 
@@ -33,11 +31,9 @@ function emptyDraft(): Draft {
   return {
     fullName: "",
     phone: "",
-    bitsEmail: "",
     bitsId: "",
     yearOfStudy: "",
-    hostel: "",
-    departments: [],
+    verticals: [],
     answers: {},
   };
 }
@@ -91,9 +87,9 @@ export default function ApplyFlow({
     }
   }, [draft]);
 
-  const deptQuestions = useMemo(
-    () => departmentQuestions(questions, draft.departments),
-    [questions, draft.departments]
+  const vertQuestions = useMemo(
+    () => verticalQuestions(questions, draft.verticals),
+    [questions, draft.verticals]
   );
   const generalBank = useMemo(() => generalQuestions(questions), [questions]);
 
@@ -111,16 +107,16 @@ export default function ApplyFlow({
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function toggleDepartment(id: string) {
-    const on = draft.departments.includes(id);
-    if (!on && draft.departments.length >= 3) return;
-    set("departments", on ? draft.departments.filter((d) => d !== id) : [...draft.departments, id]);
+  function toggleVertical(id: string) {
+    const on = draft.verticals.includes(id);
+    if (!on && draft.verticals.length >= 3) return;
+    set("verticals", on ? draft.verticals.filter((v) => v !== id) : [...draft.verticals, id]);
   }
 
   /** Validates the current step and moves on, or paints the errors. */
   function next() {
     if (step === 0) {
-      const parsed = basicsSchema.safeParse({ ...draft, hostel: draft.hostel || undefined });
+      const parsed = basicsSchema.safeParse(draft);
       if (!parsed.success) {
         const found: Record<string, string> = {};
         for (const issue of parsed.error.issues) {
@@ -136,8 +132,8 @@ export default function ApplyFlow({
 
     // Steps 1 and 2 each validate only the questions shown on them; the full
     // bank is checked again at submit, and once more on the server.
-    const onThisStep = step === 1 ? deptQuestions : generalBank;
-    const result = validateAnswers(questions, draft.departments, draft.answers);
+    const onThisStep = step === 1 ? vertQuestions : generalBank;
+    const result = validateAnswers(questions, draft.verticals, draft.answers);
     if (!result.ok) {
       const onStep = Object.fromEntries(
         Object.entries(result.errors).filter(([id]) => onThisStep.some((q) => q.id === id))
@@ -154,12 +150,12 @@ export default function ApplyFlow({
     if (pending) return;
     setSubmitError(null);
 
-    const parsedBasics = basicsSchema.safeParse({ ...draft, hostel: draft.hostel || undefined });
+    const parsedBasics = basicsSchema.safeParse(draft);
     if (!parsedBasics.success) {
       setSubmitError("Some of your details need fixing — go back to step 1.");
       return;
     }
-    const checked = validateAnswers(questions, draft.departments, draft.answers);
+    const checked = validateAnswers(questions, draft.verticals, draft.answers);
     if (!checked.ok) {
       setErrors(checked.errors);
       setSubmitError("Some required questions are still blank — check the earlier steps.");
@@ -230,21 +226,6 @@ export default function ApplyFlow({
             </div>
 
             <div className="ind-row">
-              <div className="ind-field" data-error={errors.bitsEmail ? "true" : undefined}>
-                <label className="ind-label" htmlFor="bitsEmail">
-                  BITS email<span className="ind-req"> *</span>
-                </label>
-                <input
-                  id="bitsEmail"
-                  className="ind-input"
-                  inputMode="email"
-                  placeholder="f20241234@goa.bits-pilani.ac.in"
-                  value={draft.bitsEmail}
-                  onChange={(e) => set("bitsEmail", e.target.value)}
-                />
-                {errors.bitsEmail && <p className="ind-error">{errors.bitsEmail}</p>}
-              </div>
-
               <div className="ind-field" data-error={errors.bitsId ? "true" : undefined}>
                 <label className="ind-label" htmlFor="bitsId">
                   BITS ID<span className="ind-req"> *</span>
@@ -258,9 +239,7 @@ export default function ApplyFlow({
                 />
                 {errors.bitsId && <p className="ind-error">{errors.bitsId}</p>}
               </div>
-            </div>
 
-            <div className="ind-row">
               <div className="ind-field" data-error={errors.phone ? "true" : undefined}>
                 <label className="ind-label" htmlFor="phone">
                   Phone<span className="ind-req"> *</span>
@@ -274,20 +253,6 @@ export default function ApplyFlow({
                   onChange={(e) => set("phone", e.target.value)}
                 />
                 {errors.phone && <p className="ind-error">{errors.phone}</p>}
-              </div>
-
-              <div className="ind-field">
-                <label className="ind-label" htmlFor="hostel">
-                  Hostel / room<span className="ind-opt"> (optional)</span>
-                </label>
-                <input
-                  id="hostel"
-                  className="ind-input"
-                  placeholder="AH-7 / 214"
-                  value={draft.hostel}
-                  onChange={(e) => set("hostel", e.target.value)}
-                  maxLength={60}
-                />
               </div>
             </div>
 
@@ -314,14 +279,14 @@ export default function ApplyFlow({
               {errors.yearOfStudy && <p className="ind-error">{errors.yearOfStudy}</p>}
             </div>
 
-            <div className="ind-field" data-error={errors.departments ? "true" : undefined}>
+            <div className="ind-field" data-error={errors.verticals ? "true" : undefined}>
               <span className="ind-label">
-                Which departments are you applying to?<span className="ind-req"> *</span>
+                Which verticals are you applying to?<span className="ind-req"> *</span>
               </span>
-              <p className="ind-hint">Pick up to three — the order you tap them is your preference order.</p>
+              <p className="ind-hint">The order you tap them is your preference order.</p>
               <div className="ind-depts">
-                {DEPARTMENTS.map((d) => {
-                  const rank = draft.departments.indexOf(d.id);
+                {VERTICALS.map((d) => {
+                  const rank = draft.verticals.indexOf(d.id);
                   return (
                     <button
                       key={d.id}
@@ -329,7 +294,7 @@ export default function ApplyFlow({
                       className="ind-dept"
                       data-selected={rank >= 0}
                       aria-pressed={rank >= 0}
-                      onClick={() => toggleDepartment(d.id)}
+                      onClick={() => toggleVertical(d.id)}
                     >
                       <span className="ind-dept-rank">{rank >= 0 ? `#${rank + 1}` : "+"}</span>
                       <span className="ind-dept-name">{d.name}</span>
@@ -338,7 +303,7 @@ export default function ApplyFlow({
                   );
                 })}
               </div>
-              {errors.departments && <p className="ind-error">{errors.departments}</p>}
+              {errors.verticals && <p className="ind-error">{errors.verticals}</p>}
             </div>
           </section>
         )}
@@ -346,14 +311,14 @@ export default function ApplyFlow({
         {step === 1 && (
           <section>
             <h3 className="ind-card-title">
-              {draft.departments.length === 1 ? "Your department" : "Your departments"}
+              {draft.verticals.length === 1 ? "Your vertical" : "Your verticals"}
             </h3>
             <p className="ind-card-sub">
-              {deptQuestions.length > 0
+              {vertQuestions.length > 0
                 ? "A few questions specific to what you picked."
                 : "Nothing extra to ask for these picks — carry on."}
             </p>
-            {deptQuestions.map((q) => (
+            {vertQuestions.map((q) => (
               <QuestionField
                 key={q.id}
                 question={q}
@@ -392,10 +357,6 @@ export default function ApplyFlow({
                 <dd>{draft.fullName || "—"}</dd>
               </div>
               <div>
-                <dt>BITS email</dt>
-                <dd>{draft.bitsEmail || "—"}</dd>
-              </div>
-              <div>
                 <dt>BITS ID</dt>
                 <dd>{draft.bitsId || "—"}</dd>
               </div>
@@ -407,20 +368,14 @@ export default function ApplyFlow({
                 <dt>Year</dt>
                 <dd>{draft.yearOfStudy || "—"}</dd>
               </div>
-              {draft.hostel && (
-                <div>
-                  <dt>Hostel</dt>
-                  <dd>{draft.hostel}</dd>
-                </div>
-              )}
               <div>
-                <dt>Departments</dt>
-                <dd>{draft.departments.map(departmentName).join(" → ") || "—"}</dd>
+                <dt>Verticals</dt>
+                <dd>{draft.verticals.map(verticalName).join(" → ") || "—"}</dd>
               </div>
             </dl>
 
             <div className="ind-review-answers">
-              {[...deptQuestions, ...generalBank].map((q) => {
+              {[...vertQuestions, ...generalBank].map((q) => {
                 const v = draft.answers[q.id];
                 const shown = Array.isArray(v) ? v.join(", ") : (v ?? "");
                 return (

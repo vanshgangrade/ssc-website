@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { signIn, signOut } from "next-auth/react";
-import { DEPARTMENTS, departmentName, type Question } from "@/lib/inductions/questions";
+import { VERTICALS, verticalName, type Question } from "@/lib/inductions/questions";
 
 // Client-only: the form restores its draft from sessionStorage during its
 // first render, which there is no sensible server equivalent of. Skipping the
@@ -23,7 +23,7 @@ type SessionSummary = {
 type Existing = {
   id: string;
   submittedAt: string;
-  departments: string[];
+  verticals: string[];
   status: string;
 } | null;
 
@@ -36,7 +36,7 @@ const PROCESS = [
   {
     no: "02",
     title: "Task round",
-    body: "A small, department-specific brief you do in your own time. No prior experience assumed.",
+    body: "A small, vertical-specific brief you do in your own time. No prior experience assumed.",
   },
   {
     no: "03",
@@ -53,19 +53,19 @@ const PROCESS = [
 const FAQS = [
   {
     q: "Do I need any prior experience?",
-    a: "No. Every cycle we induct people who have never touched a camera or a timeline. Curiosity and follow-through matter more than a showreel.",
+    a: "No. Every cycle we induct people starting from scratch. Curiosity and follow-through matter more than a portfolio.",
   },
   {
-    q: "Can I apply to more than one department?",
-    a: "Up to three, ranked by preference. You'll answer the questions for each one you pick, so choose the ones you'd genuinely show up for.",
+    q: "Can I apply to more than one vertical?",
+    a: "Yes, ranked by preference. You'll answer the questions for each one you pick, so choose the ones you'd genuinely show up for.",
   },
   {
-    q: "How much time does crew work take?",
-    a: "Around three to six hours in a normal week, more in the run-up to a shoot or a screening. We plan around tests — just tell us early.",
+    q: "How much time does this take?",
+    a: "Around three to six hours in a normal week, more in the run-up to a screening. We plan around tests — just tell us early.",
   },
   {
     q: "Is this only for first-years?",
-    a: "Not at all. Anyone on campus can apply, any year.",
+    a: "First and second years can apply.",
   },
   {
     q: "Can I edit my application after submitting?",
@@ -143,8 +143,7 @@ export default function InductionsClient({
               <em>Inductions</em>
             </h1>
             <p className="ind-lede">
-              We make films on this campus — shorts, documentaries, the odd chaotic sketch — and we
-              screen them to a room that actually shows up. {cycleTitle} is how you get on the crew.
+              We screen movies. {cycleTitle} is how you get on the crew.
             </p>
 
             {isOpen && countdown && (
@@ -200,8 +199,8 @@ export default function InductionsClient({
                       <dd>{new Date(existing.submittedAt).toLocaleString()}</dd>
                     </div>
                     <div>
-                      <dt>Departments</dt>
-                      <dd>{existing.departments.map(departmentName).join(" → ")}</dd>
+                      <dt>Verticals</dt>
+                      <dd>{existing.verticals.map(verticalName).join(" → ")}</dd>
                     </div>
                     <div>
                       <dt>Reference</dt>
@@ -238,22 +237,22 @@ export default function InductionsClient({
           </div>
         </section>
 
-        {/* ---- departments ---- */}
+        {/* ---- verticals ---- */}
         <section className="ind-section">
           <div className="wrap wrap-wide">
             <div className="section-head">
               <p className="eyebrow">Where you&apos;d fit</p>
-              <h2>Six departments, one crew</h2>
+              <h2>Three verticals, one crew</h2>
               <p>
                 Nobody stays in their lane forever — but this is where you&apos;d start, and what
                 we&apos;d train you on first.
               </p>
             </div>
             <div className="ind-dept-grid">
-              {DEPARTMENTS.map((d, i) => (
+              {VERTICALS.map((d, i) => (
                 <article key={d.id} className="ind-dept-card">
                   <p className="reel-no">
-                    <span>Dept {String(i + 1).padStart(2, "0")}</span>
+                    <span>Vertical {String(i + 1).padStart(2, "0")}</span>
                   </p>
                   <h3>{d.name}</h3>
                   <p>{d.blurb}</p>

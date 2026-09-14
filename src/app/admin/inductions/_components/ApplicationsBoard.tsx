@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DEPARTMENTS, departmentName } from "@/lib/inductions/questions";
+import { VERTICALS, verticalName } from "@/lib/inductions/questions";
 import type { StoredAnswer } from "@/lib/inductions/validation";
 
 export type AdminApplication = {
@@ -12,8 +12,7 @@ export type AdminApplication = {
   bitsEmail: string;
   bitsId: string;
   yearOfStudy: string;
-  hostel: string | null;
-  departments: string[];
+  verticals: string[];
   answers: StoredAnswer[];
   status: string;
   reviewNote: string | null;
@@ -38,7 +37,7 @@ export default function ApplicationsBoard({
 }) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [deptFilter, setDeptFilter] = useState<string>("ALL");
+  const [vertFilter, setVertFilter] = useState<string>("ALL");
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -56,7 +55,7 @@ export default function ApplicationsBoard({
     const q = query.trim().toLowerCase();
     return applications.filter((a) => {
       if (statusFilter !== "ALL" && a.status !== statusFilter) return false;
-      if (deptFilter !== "ALL" && !a.departments.includes(deptFilter)) return false;
+      if (vertFilter !== "ALL" && !a.verticals.includes(vertFilter)) return false;
       if (!q) return true;
       return (
         a.fullName.toLowerCase().includes(q) ||
@@ -64,7 +63,7 @@ export default function ApplicationsBoard({
         a.bitsId.toLowerCase().includes(q)
       );
     });
-  }, [applications, statusFilter, deptFilter, query]);
+  }, [applications, statusFilter, vertFilter, query]);
 
   const open = applications.find((a) => a.id === openId) ?? null;
 
@@ -99,7 +98,7 @@ export default function ApplicationsBoard({
 
   function exportCsv() {
     // One column per question, so the sheet stays readable when a cycle mixes
-    // departments — union of every question id seen, in first-seen order.
+    // verticals — union of every question id seen, in first-seen order.
     const questionIds: string[] = [];
     const prompts = new Map<string, string>();
     for (const a of applications) {
@@ -118,8 +117,7 @@ export default function ApplicationsBoard({
       "Account Email",
       "Phone",
       "Year",
-      "Hostel",
-      "Departments",
+      "Verticals",
       "Status",
       "Review note",
       "Reviewed by",
@@ -141,8 +139,7 @@ export default function ApplicationsBoard({
         a.accountEmail,
         a.phone,
         a.yearOfStudy,
-        a.hostel ?? "",
-        a.departments.map(departmentName).join(" > "),
+        a.verticals.map(verticalName).join(" > "),
         a.status,
         a.reviewNote ?? "",
         a.reviewedBy ?? "",
@@ -186,12 +183,12 @@ export default function ApplicationsBoard({
           <div className="ia-filter-row">
             <select
               className="ia-input"
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              aria-label="Filter by department"
+              value={vertFilter}
+              onChange={(e) => setVertFilter(e.target.value)}
+              aria-label="Filter by vertical"
             >
-              <option value="ALL">All departments</option>
-              {DEPARTMENTS.map((d) => (
+              <option value="ALL">All verticals</option>
+              {VERTICALS.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>
@@ -216,7 +213,7 @@ export default function ApplicationsBoard({
                 <th>Name</th>
                 <th>BITS ID</th>
                 <th>Year</th>
-                <th>Departments</th>
+                <th>Verticals</th>
                 <th>Status</th>
                 <th>Submitted</th>
                 <th />
@@ -228,7 +225,7 @@ export default function ApplicationsBoard({
                   <td>{a.fullName}</td>
                   <td className="ia-mono">{a.bitsId}</td>
                   <td>{a.yearOfStudy}</td>
-                  <td>{a.departments.map(departmentName).join(", ")}</td>
+                  <td>{a.verticals.map(verticalName).join(", ")}</td>
                   <td>
                     <span className={`ia-status ia-status-${a.status.toLowerCase()}`}>{a.status}</span>
                   </td>
@@ -259,7 +256,7 @@ export default function ApplicationsBoard({
               <div>
                 <h3>{open.fullName}</h3>
                 <p className="ia-drawer-sub">
-                  {open.bitsId} · {open.yearOfStudy} · {open.departments.map(departmentName).join(" → ")}
+                  {open.bitsId} · {open.yearOfStudy} · {open.verticals.map(verticalName).join(" → ")}
                 </p>
               </div>
               <button className="admin-btn admin-btn-ghost" onClick={() => setOpenId(null)}>
@@ -279,10 +276,6 @@ export default function ApplicationsBoard({
               <div>
                 <dt>Phone</dt>
                 <dd>{open.phone}</dd>
-              </div>
-              <div>
-                <dt>Hostel</dt>
-                <dd>{open.hostel || "—"}</dd>
               </div>
               <div>
                 <dt>Submitted</dt>

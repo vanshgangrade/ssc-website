@@ -39,7 +39,7 @@ src/app/signin/page.tsx      Google sign-in page
 src/app/admin/page.tsx       admin dashboard (protected, server-rendered)
 src/app/api/vote/route.ts    cast/read your own vote
 src/app/api/admin/*          admin-only stats + poll open/close toggle
-src/lib/inductions/*         crew inductions: departments, question store, validation, cycle gate
+src/lib/inductions/*         crew inductions: verticals, question store, validation, cycle gate
 src/app/inductions/*         public induction landing page + multi-step form
 src/app/admin/inductions/*   admin review panel (filters, detail drawer, CSV)
 src/app/api/inductions/*     application submit endpoint
@@ -120,7 +120,7 @@ Visit `http://localhost:3000`.
 A Google-Form-shaped application flow that lives on the site instead of on
 Google Forms, with an admin review panel behind it.
 
-- **Applicant flow** — `/inductions` is a landing page (departments, process,
+- **Applicant flow** — `/inductions` is a landing page (verticals, process,
   FAQ) with the form inlined. Sign-in is Google OAuth, same as voting, so one
   person gets one application. The form runs in four steps (details →
   department questions → general questions → review) and saves a draft to
@@ -144,7 +144,7 @@ Google Forms, with an admin review panel behind it.
 Questions live in the database, per cycle, and are edited from
 **/admin/inductions** — add, reword, reorder, retype, mark required/optional,
 set character limits, and choose whether a question is asked of everyone or
-only of applicants who picked particular departments. No deploy needed.
+only of applicants who picked particular verticals. No deploy needed.
 
 `DEFAULT_QUESTIONS` in `src/lib/inductions/questions.ts` is only the starter
 set a brand-new cycle is seeded with when there is no previous cycle to copy
@@ -154,7 +154,7 @@ applications have come in).
 Answers are stored on each application against a snapshot of the prompt, so
 rewording a question never rewrites what past applicants were actually asked.
 
-The `DEPARTMENTS` list is still code — department ids are referenced by stored
+The `VERTICALS` list is still code — vertical ids are referenced by stored
 applications and by each question's "ask this of", so changing them is a
 migration, not an edit.
 
