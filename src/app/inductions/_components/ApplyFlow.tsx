@@ -210,6 +210,9 @@ export default function ApplyFlow({
               Signed in as <strong>{signedInEmail}</strong>, that&apos;s where we&apos;ll send
               updates about the rounds.
             </p>
+            <p className="ind-card-note">
+              Be witty in your answers. We read every one of them.
+            </p>
 
             <div className="ind-field" data-error={errors.fullName ? "true" : undefined}>
               <label className="ind-label" htmlFor="fullName">
