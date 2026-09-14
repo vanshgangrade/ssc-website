@@ -123,7 +123,7 @@ export default function MovieManager({
             </div>
           </div>
         ))}
-        {movies.length === 0 && <p className="admin-empty">No movies yet — add one below.</p>}
+        {movies.length === 0 && <p className="admin-empty">No movies yet, add one below.</p>}
       </div>
 
       <form className="movie-form" onSubmit={submit}>

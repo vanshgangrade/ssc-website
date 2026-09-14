@@ -392,3 +392,34 @@
     width: 100%;
   }
 }
+
+/* ---------- destructive confirmation ---------- */
+.ia-confirm {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--ember);
+  border-radius: 3px;
+  background: rgba(192, 67, 44, 0.08);
+}
+.ia-confirm h3 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 21px;
+  letter-spacing: 0.03em;
+  color: var(--screen);
+  margin-bottom: 8px;
+}
+.ia-confirm p {
+  color: var(--ash);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.ia-confirm .ia-input {
+  width: 100%;
+}
+.ia-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}

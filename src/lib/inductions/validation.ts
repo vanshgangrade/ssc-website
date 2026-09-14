@@ -18,7 +18,7 @@ export const basicsSchema = z.object({
     .string()
     .trim()
     .min(2, "Enter your full name.")
-    .max(120, "That name looks too long — check for a paste error."),
+    .max(120, "That name looks too long, check for a paste error."),
   phone: z
     .string()
     .trim()

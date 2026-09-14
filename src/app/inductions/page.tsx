@@ -9,7 +9,7 @@ import "./inductions.css";
 export const metadata: Metadata = {
   title: "Crew Inductions — Silver Screen Club",
   description:
-    "Apply to join the Silver Screen Club crew at BITS Pilani, Goa Campus — direction, camera, editing, sound, production and design.",
+    "Apply to join the Silver Screen Club crew at BITS Pilani, Goa Campus. Sponsorships & Partnerships, Design & Publicity, Tech & Web Development.",
 };
 
 // Application state is per-user and changes the moment someone submits, so

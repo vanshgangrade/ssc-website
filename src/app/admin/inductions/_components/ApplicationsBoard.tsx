@@ -90,7 +90,7 @@ export default function ApplicationsBoard({
       }
       router.refresh();
     } catch {
-      setError("Network error — try again.");
+      setError("Network error, try again.");
     } finally {
       setBusy(false);
     }

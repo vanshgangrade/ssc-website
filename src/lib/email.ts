@@ -24,7 +24,7 @@ export async function sendVoteConfirmationEmail(to: string, movieName: string) {
       <h2 style="margin:8px 0 16px;">Ticket punched</h2>
       <p>Your vote has been recorded for:</p>
       <p style="font-size:18px; font-weight:600; margin:12px 0;">${movieName}</p>
-      <p style="color:#555;">You can change your vote any time before the poll closes by returning to the ballot and casting a new one — only your latest vote counts.</p>
+      <p style="color:#555;">You can change your vote any time before the poll closes by returning to the ballot and casting a new one, only your latest vote counts.</p>
       <p style="margin-top:24px; font-size:12px; color:#999;">Silver Screen Club · BITS Pilani, Goa Campus</p>
     </div>
   `;
@@ -59,10 +59,10 @@ export async function sendApplicationConfirmationEmail(
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
       <p style="letter-spacing:.2em; text-transform:uppercase; font-size:11px; color:#8f8779;">Silver Screen Club</p>
       <h2 style="margin:8px 0 16px;">Application received</h2>
-      <p>Thanks, ${escapeHtml(fullName)} — your crew induction application is in.</p>
+      <p>Thanks, ${escapeHtml(fullName)}, your crew induction application is in.</p>
       <p style="margin:12px 0;"><strong>Verticals:</strong> ${escapeHtml(list)}</p>
       <p style="margin:12px 0;"><strong>Reference:</strong> ${ref}</p>
-      <p style="color:#555;">Next up is the task round. Watch this inbox — every update from here on comes by email.</p>
+      <p style="color:#555;">Next up is the task round. Watch this inbox, every update from here on comes by email.</p>
       <p style="margin-top:24px; font-size:12px; color:#999;">Silver Screen Club · BITS Pilani, Goa Campus</p>
     </div>
   `;
