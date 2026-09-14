@@ -1,0 +1,276 @@
+/* Admin — crew inductions. Extends admin.css (.admin-wrap/.admin-card/
+   .admin-table/.admin-btn) with the bits only this page needs. */
+
+.ia-count {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 13px;
+  color: var(--brass);
+}
+.ia-mono {
+  font-family: var(--font-space-mono), monospace;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- cycles ---------- */
+.ia-cycle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ia-cycle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(232, 179, 65, 0.14);
+  border-radius: 3px;
+}
+.ia-cycle-row[data-selected="true"] {
+  border-color: var(--marquee);
+  background: rgba(232, 179, 65, 0.06);
+}
+.ia-cycle-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+}
+.ia-cycle-title {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 19px;
+  letter-spacing: 0.03em;
+  color: var(--screen);
+}
+.ia-cycle-meta {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  color: var(--brass);
+}
+.ia-cycle-new {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.ia-cycle-controls {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(232, 179, 65, 0.12);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* ---------- inputs ---------- */
+.ia-input {
+  background: rgba(10, 8, 6, 0.55);
+  border: 1px solid var(--brass);
+  border-radius: 2px;
+  padding: 10px 12px;
+  color: var(--screen);
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 14px;
+  min-height: 42px;
+  min-width: 200px;
+  flex: 1;
+}
+.ia-input:focus {
+  outline: none;
+  border-color: var(--marquee);
+}
+.ia-textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+/* ---------- filters ---------- */
+.ia-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.ia-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid var(--brass);
+  border-radius: 999px;
+  color: var(--ash);
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.ia-chip[data-selected="true"] {
+  border-color: var(--marquee);
+  color: var(--marquee);
+  background: rgba(232, 179, 65, 0.08);
+}
+.ia-chip-count {
+  color: var(--brass);
+}
+.ia-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ---------- status pills ---------- */
+.ia-status {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+}
+.ia-status-submitted {
+  color: var(--ash);
+}
+.ia-status-shortlisted {
+  color: var(--marquee);
+}
+.ia-status-waitlisted {
+  color: #c79a4a;
+}
+.ia-status-rejected {
+  color: var(--ember);
+}
+.ia-status-accepted {
+  color: #6fae72;
+}
+
+/* ---------- detail drawer ---------- */
+.ia-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(5, 3, 2, 0.7);
+  display: flex;
+  justify-content: flex-end;
+}
+.ia-drawer {
+  width: min(620px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  background: linear-gradient(165deg, var(--curtain) 0%, var(--curtain-deep) 100%);
+  border-left: 1px solid rgba(232, 179, 65, 0.18);
+  padding: 26px 24px 40px;
+}
+.ia-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(232, 179, 65, 0.12);
+}
+.ia-drawer-head h3 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+  color: var(--screen);
+}
+.ia-drawer-sub {
+  margin-top: 4px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  color: var(--brass);
+  line-height: 1.5;
+}
+.ia-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(232, 179, 65, 0.12);
+}
+.ia-facts dt {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 3px;
+}
+.ia-facts dd {
+  color: var(--screen);
+  font-size: 13.5px;
+  word-break: break-word;
+}
+.ia-answers {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ia-answer-q {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--marquee-dim);
+  margin-bottom: 5px;
+  line-height: 1.5;
+}
+.ia-answer-a {
+  color: #cfc7b8;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ia-answer-a[data-empty="true"] {
+  color: var(--brass);
+  font-style: italic;
+}
+.ia-review {
+  padding-top: 18px;
+  border-top: 1px solid rgba(232, 179, 65, 0.12);
+}
+.ia-review-label {
+  display: block;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 8px;
+}
+.ia-reviewed {
+  margin-top: 8px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  color: var(--brass);
+}
+.ia-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ia-review-actions .admin-btn[data-current="true"] {
+  border-color: var(--marquee);
+  color: var(--marquee);
+}
+
+@media (max-width: 560px) {
+  .ia-drawer {
+    padding: 20px 16px 32px;
+  }
+}

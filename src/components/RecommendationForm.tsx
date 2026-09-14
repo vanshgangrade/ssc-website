@@ -233,6 +233,9 @@ export default function RecommendationForm({
         <footer className="rec-footer">
           <p className="fmark">SILVER SCREEN CLUB</p>
           <p className="fsub">Every frame tells a story</p>
+          <p className="fadmin">
+            <a href="/inductions">Join the crew — inductions</a>
+          </p>
           {session?.isAdmin && (
             <p className="fadmin">
               <a href="/admin">Admin Panel →</a>
