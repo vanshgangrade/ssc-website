@@ -152,13 +152,13 @@ export default function ApplyFlow({
 
     const parsedBasics = basicsSchema.safeParse(draft);
     if (!parsedBasics.success) {
-      setSubmitError("Some of your details need fixing — go back to step 1.");
+      setSubmitError("Some of your details need fixing, go back to step 1.");
       return;
     }
     const checked = validateAnswers(questions, draft.verticals, draft.answers);
     if (!checked.ok) {
       setErrors(checked.errors);
-      setSubmitError("Some required questions are still blank — check the earlier steps.");
+      setSubmitError("Some required questions are still blank, check the earlier steps.");
       return;
     }
 
@@ -181,7 +181,7 @@ export default function ApplyFlow({
       }
       onSubmitted();
     } catch {
-      setSubmitError("Network trouble — check your connection and try again.");
+      setSubmitError("Network trouble, check your connection and try again.");
     } finally {
       setPending(false);
     }
@@ -207,7 +207,7 @@ export default function ApplyFlow({
           <section>
             <h3 className="ind-card-title">Roll call</h3>
             <p className="ind-card-sub">
-              Signed in as <strong>{signedInEmail}</strong> — that&apos;s where we&apos;ll send
+              Signed in as <strong>{signedInEmail}</strong>, that&apos;s where we&apos;ll send
               updates about the rounds.
             </p>
 
@@ -316,7 +316,7 @@ export default function ApplyFlow({
             <p className="ind-card-sub">
               {vertQuestions.length > 0
                 ? "A few questions specific to what you picked."
-                : "Nothing extra to ask for these picks — carry on."}
+                : "Nothing extra to ask for these picks, carry on."}
             </p>
             {vertQuestions.map((q) => (
               <QuestionField
@@ -349,7 +349,7 @@ export default function ApplyFlow({
         {step === 3 && (
           <section>
             <h3 className="ind-card-title">Check the reel before it screens</h3>
-            <p className="ind-card-sub">Once it&apos;s in, you can&apos;t edit it — so give it a read.</p>
+            <p className="ind-card-sub">Once it&apos;s in, you can&apos;t edit it, so give it a read.</p>
 
             <dl className="ind-review">
               <div>

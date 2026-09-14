@@ -49,7 +49,7 @@ export default function ExportButton({ recommendations }: { recommendations: Rec
 
     // Copy to clipboard then open Google Sheets
     navigator.clipboard.writeText(tsv).then(() => {
-      alert("Data copied to clipboard! Google Sheets will open — create a new sheet and paste (Ctrl+V) the data.");
+      alert("Data copied to clipboard! Google Sheets will open, create a new sheet and paste (Ctrl+V) the data.");
       window.open("https://sheets.google.com/create", "_blank");
     }).catch(() => {
       // Fallback: download as CSV if clipboard fails

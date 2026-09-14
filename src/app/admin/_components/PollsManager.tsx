@@ -139,7 +139,7 @@ export default function PollsManager({
             </div>
           </div>
         ))}
-        {polls.length === 0 && <p className="admin-empty">No polls yet — create one below.</p>}
+        {polls.length === 0 && <p className="admin-empty">No polls yet, create one below.</p>}
       </div>
 
       <form className="poll-form" onSubmit={createPoll}>

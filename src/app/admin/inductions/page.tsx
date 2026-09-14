@@ -35,7 +35,10 @@ export default async function AdminInductionsPage({
     );
   }
 
-  const cycles = await prisma.inductionCycle.findMany({ orderBy: { createdAt: "desc" } });
+  const cycles = await prisma.inductionCycle.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { _count: { select: { applications: true } } },
+  });
   const { cycle: cycleParam } = await searchParams;
   const selected = cycles.find((c) => c.id === cycleParam) ?? cycles[0] ?? null;
 
@@ -81,6 +84,7 @@ export default async function AdminInductionsPage({
           isOpen: c.isOpen,
           closesAt: c.closesAt ? c.closesAt.toISOString() : null,
           createdAt: c.createdAt.toISOString(),
+          applicationCount: c._count.applications,
         }))}
         selectedCycleId={selected?.id ?? null}
       />

@@ -61,7 +61,7 @@ const FAQS = [
   },
   {
     q: "How much time does this take?",
-    a: "Around three to six hours in a normal week, more in the run-up to a screening. We plan around tests — just tell us early.",
+    a: "Around three to six hours in a normal week, more in the run-up to a screening. We plan around tests, just tell us early.",
   },
   {
     q: "Is this only for first-years?",
@@ -69,7 +69,7 @@ const FAQS = [
   },
   {
     q: "Can I edit my application after submitting?",
-    a: "No — so read it over on the review step. If something important changed, write to us and we'll sort it out.",
+    a: "No, so read it over on the review step. If something important changed, write to us and we'll sort it out.",
   },
 ];
 
@@ -175,7 +175,7 @@ export default function InductionsClient({
             )}
             {!session && isOpen && (
               <p className="ind-signin-note">
-                Sign in with your BITS Google account — it&apos;s how we keep one application per person.
+                Sign in with your BITS Google account, it&apos;s how we keep one application per person.
               </p>
             )}
           </div>
@@ -189,7 +189,7 @@ export default function InductionsClient({
                 <p className="eyebrow">That&apos;s a wrap</p>
                 <h2 className="ind-done-title">Your application is in.</h2>
                 <p className="ind-done-body">
-                  We&apos;ve got it{existing ? "" : " — a confirmation is on its way to your inbox"}. Watch
+                  We&apos;ve got it{existing ? "" : ", a confirmation is on its way to your inbox"}. Watch
                   your BITS email for the task round; everything after this happens there.
                 </p>
                 {existing && (
@@ -244,7 +244,7 @@ export default function InductionsClient({
               <p className="eyebrow">Where you&apos;d fit</p>
               <h2>Three verticals, one crew</h2>
               <p>
-                Nobody stays in their lane forever — but this is where you&apos;d start, and what
+                Nobody stays in their lane forever, but this is where you&apos;d start, and what
                 we&apos;d train you on first.
               </p>
             </div>
@@ -316,7 +316,7 @@ export default function InductionsClient({
           <p className="fsub">Every frame tells a story</p>
           {session?.isAdmin && (
             <p className="fadmin">
-              <a href="/admin/inductions">Admin — Applications →</a>
+              <a href="/admin/inductions">Admin, Applications →</a>
             </p>
           )}
         </footer>

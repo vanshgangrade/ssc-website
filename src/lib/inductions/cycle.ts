@@ -34,7 +34,7 @@ export function gateMessage(gate: CycleGate): string {
   if (gate.open) return "";
   switch (gate.reason) {
     case "deadline-passed":
-      return "Applications have closed for this cycle. Keep an eye on our socials — we induct again next semester.";
+      return "Applications have closed for this cycle. Keep an eye on our socials, we induct again next semester.";
     case "not-open":
       return "Applications aren't open just yet. Check back soon.";
     default:

@@ -78,17 +78,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // Reset throws away every question on this cycle, so refuse once anyone has
-  // answered them — the answers are snapshots, but the bank they were asked
-  // from should still be recoverable.
-  const answered = await prisma.application.count({ where: { cycleId } });
-  if (answered > 0) {
-    return NextResponse.json(
-      { error: `Can't reset — ${answered} application(s) already came in on these questions.` },
-      { status: 409 }
-    );
-  }
-
+  // Resetting is safe for applications already in: their answers are stored
+  // as snapshots of the prompt they were asked, not as references to these
+  // rows. It only replaces what future applicants will see.
   const count = await resetQuestionsToDefaults(cycleId);
   return NextResponse.json({ ok: true, count });
 }

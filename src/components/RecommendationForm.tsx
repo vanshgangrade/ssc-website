@@ -234,7 +234,7 @@ export default function RecommendationForm({
           <p className="fmark">SILVER SCREEN CLUB</p>
           <p className="fsub">Every frame tells a story</p>
           <p className="fadmin">
-            <a href="/inductions">Join the crew — inductions</a>
+            <a href="/inductions">Join the crew, inductions</a>
           </p>
           {session?.isAdmin && (
             <p className="fadmin">

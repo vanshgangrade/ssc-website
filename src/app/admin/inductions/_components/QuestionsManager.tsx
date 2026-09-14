@@ -95,7 +95,7 @@ export default function QuestionsManager({
       router.refresh();
       return true;
     } catch {
-      setError("Network error — try again.");
+      setError("Network error, try again.");
       return false;
     } finally {
       setBusy(false);
@@ -148,7 +148,10 @@ export default function QuestionsManager({
   }
 
   async function reset() {
-    if (!confirm("Replace every question on this cycle with the built-in starter set?")) return;
+    const warning = hasApplications
+      ? "Replace every question on this cycle with the built-in starter set?\n\nApplications already in keep the answers they gave, recorded against the questions they were actually asked. Only future applicants see the new set."
+      : "Replace every question on this cycle with the built-in starter set?";
+    if (!confirm(warning)) return;
     await call("/api/admin/inductions/questions", "PATCH", { cycleId, action: "reset" });
   }
 
@@ -171,7 +174,7 @@ export default function QuestionsManager({
         These are the questions applicants see on /inductions. A question with no vertical
         attached is asked of everyone; otherwise only applicants who picked one of its verticals
         see it.
-        {hasApplications && " Applications have already come in — edits from here on won't change what past applicants were asked."}
+        {hasApplications && " Applications have already come in, edits from here on won't change what past applicants were asked."}
       </p>
 
       <div className="iq-list">
@@ -219,7 +222,7 @@ export default function QuestionsManager({
           </div>
         ))}
         {questions.length === 0 && (
-          <p className="admin-empty">No questions yet — add one, or load the starter set.</p>
+          <p className="admin-empty">No questions yet, add one, or load the starter set.</p>
         )}
       </div>
 
@@ -228,13 +231,8 @@ export default function QuestionsManager({
           <button className="admin-btn" onClick={startAdd} disabled={busy}>
             Add question
           </button>
-          <button
-            className="admin-btn admin-btn-ghost"
-            onClick={reset}
-            disabled={busy || hasApplications}
-            title={hasApplications ? "Applications already came in on these questions" : undefined}
-          >
-            Load starter set
+          <button className="admin-btn admin-btn-ghost" onClick={reset} disabled={busy}>
+            Reset to starter questions
           </button>
         </div>
       )}
@@ -309,7 +307,7 @@ export default function QuestionsManager({
           {needsOptions && (
             <div className="ind-field">
               <label className="ind-label" htmlFor="iq-options">
-                Options — one per line
+                Options, one per line
               </label>
               <textarea
                 id="iq-options"
@@ -353,7 +351,7 @@ export default function QuestionsManager({
               onClick={() => setDraft({ ...draft, required: !draft.required })}
             >
               <span className="ind-tick ind-tick-box" aria-hidden="true" />
-              Required — applicants can&apos;t continue without answering
+              Required, applicants can&apos;t continue without answering
             </button>
           </div>
 

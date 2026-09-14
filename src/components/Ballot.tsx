@@ -210,7 +210,7 @@ export default function Ballot({
         <p className="fmark">SSC</p>
         <p className="fsub">Silver Screen Club · BITS Pilani, Goa Campus</p>
         <p className="fadmin">
-          <a href="/inductions">Join the crew — inductions</a>
+          <a href="/inductions">Join the crew, inductions</a>
         </p>
         {session?.isAdmin && (
           <p className="fadmin">

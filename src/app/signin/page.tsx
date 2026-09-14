@@ -17,7 +17,7 @@ export default async function SignInPage({
         <h1 className="signin-title">Sign in</h1>
         <p className="signin-sub">
           {allowedDomain
-            ? `Use your @${allowedDomain} Google account — it's how we keep one vote, and one application, per person.`
+            ? `Use your @${allowedDomain} Google account, it's how we keep one vote, and one application, per person.`
             : "Sign in with the Google account tied to your club email."}
         </p>
 
@@ -25,7 +25,7 @@ export default async function SignInPage({
           <p className="signin-error">
             {error === "AccessDenied"
               ? allowedDomain
-                ? `That Google account isn't a @${allowedDomain} address. Sign in again and pick your BITS account from the list — Google may have used a personal account without asking.`
+                ? `That Google account isn't a @${allowedDomain} address. Sign in again and pick your BITS account from the list, Google may have used a personal account without asking.`
                 : "That Google account isn't eligible. Sign in again and pick your BITS account from the list."
               : "Something went wrong signing you in. Try again."}
           </p>
