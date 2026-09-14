@@ -1,6 +1,8 @@
 import { signIn } from "@/lib/auth";
 import "./signin.css";
 
+const allowedDomain = (process.env.ALLOWED_EMAIL_DOMAIN ?? "").trim().toLowerCase();
+
 export default async function SignInPage({
   searchParams,
 }: {
@@ -12,15 +14,19 @@ export default async function SignInPage({
     <main className="signin-wrap">
       <div className="signin-card">
         <p className="signin-eyebrow">Silver Screen Club</p>
-        <h1 className="signin-title">Sign in to vote</h1>
+        <h1 className="signin-title">Sign in</h1>
         <p className="signin-sub">
-          One vote per member — sign in with the Google account tied to your club email.
+          {allowedDomain
+            ? `Use your @${allowedDomain} Google account — it's how we keep one vote, and one application, per person.`
+            : "Sign in with the Google account tied to your club email."}
         </p>
 
         {error && (
           <p className="signin-error">
             {error === "AccessDenied"
-              ? "That email isn't eligible to vote. Use your club Google account."
+              ? allowedDomain
+                ? `That Google account isn't a @${allowedDomain} address. Sign in again and pick your BITS account from the list — Google may have used a personal account without asking.`
+                : "That Google account isn't eligible. Sign in again and pick your BITS account from the list."
               : "Something went wrong signing you in. Try again."}
           </p>
         )}

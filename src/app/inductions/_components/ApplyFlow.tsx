@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DEPARTMENTS,
-  GENERAL_QUESTIONS,
   YEARS,
   departmentName,
-  questionsForDepartments,
+  departmentQuestions,
+  generalQuestions,
+  type Question,
 } from "@/lib/inductions/questions";
 import { basicsSchema, validateAnswers } from "@/lib/inductions/validation";
 import QuestionField from "./QuestionField";
@@ -65,10 +66,12 @@ function loadDraft(signedInName: string | null): Draft {
 }
 
 export default function ApplyFlow({
+  questions,
   signedInEmail,
   signedInName,
   onSubmitted,
 }: {
+  questions: Question[];
   signedInEmail: string;
   signedInName: string | null;
   onSubmitted: () => void;
@@ -89,9 +92,10 @@ export default function ApplyFlow({
   }, [draft]);
 
   const deptQuestions = useMemo(
-    () => questionsForDepartments(draft.departments),
-    [draft.departments]
+    () => departmentQuestions(questions, draft.departments),
+    [questions, draft.departments]
   );
+  const generalBank = useMemo(() => generalQuestions(questions), [questions]);
 
   const set = useCallback(<K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -132,8 +136,8 @@ export default function ApplyFlow({
 
     // Steps 1 and 2 each validate only the questions shown on them; the full
     // bank is checked again at submit, and once more on the server.
-    const onThisStep = step === 1 ? deptQuestions : GENERAL_QUESTIONS;
-    const result = validateAnswers(draft.departments, draft.answers);
+    const onThisStep = step === 1 ? deptQuestions : generalBank;
+    const result = validateAnswers(questions, draft.departments, draft.answers);
     if (!result.ok) {
       const onStep = Object.fromEntries(
         Object.entries(result.errors).filter(([id]) => onThisStep.some((q) => q.id === id))
@@ -155,7 +159,7 @@ export default function ApplyFlow({
       setSubmitError("Some of your details need fixing — go back to step 1.");
       return;
     }
-    const checked = validateAnswers(draft.departments, draft.answers);
+    const checked = validateAnswers(questions, draft.departments, draft.answers);
     if (!checked.ok) {
       setErrors(checked.errors);
       setSubmitError("Some required questions are still blank — check the earlier steps.");
@@ -365,7 +369,7 @@ export default function ApplyFlow({
           <section>
             <h3 className="ind-card-title">About you</h3>
             <p className="ind-card-sub">The part we actually read twice.</p>
-            {GENERAL_QUESTIONS.map((q) => (
+            {generalBank.map((q) => (
               <QuestionField
                 key={q.id}
                 question={q}
@@ -416,7 +420,7 @@ export default function ApplyFlow({
             </dl>
 
             <div className="ind-review-answers">
-              {[...deptQuestions, ...GENERAL_QUESTIONS].map((q) => {
+              {[...deptQuestions, ...generalBank].map((q) => {
                 const v = draft.answers[q.id];
                 const shown = Array.isArray(v) ? v.join(", ") : (v ?? "");
                 return (

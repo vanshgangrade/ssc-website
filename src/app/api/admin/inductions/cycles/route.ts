@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { seedQuestionsForCycle } from "@/lib/inductions/questionStore";
 
 const bodySchema = z.object({
   title: z.string().trim().min(1, "Give the cycle a title.").max(120),
@@ -24,6 +25,10 @@ export async function POST(req: Request) {
   const cycle = await prisma.inductionCycle.create({
     data: { title: parsed.data.title, isOpen: false },
   });
+
+  // Copy the previous cycle's questions (or the code defaults for the very
+  // first cycle) so a new cycle is never born with an empty form.
+  await seedQuestionsForCycle(cycle.id);
 
   return NextResponse.json({ cycle }, { status: 201 });
 }

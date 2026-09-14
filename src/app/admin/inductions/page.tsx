@@ -2,9 +2,14 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { StoredAnswer } from "@/lib/inductions/validation";
+import { questionsForCycle } from "@/lib/inductions/questionStore";
 import CycleManager from "./_components/CycleManager";
+import QuestionsManager from "./_components/QuestionsManager";
 import ApplicationsBoard from "./_components/ApplicationsBoard";
 import "../admin.css";
+// The question editor reuses the public form's field/option styling so the
+// two stay visually in step.
+import "../../inductions/inductions.css";
 import "./inductions-admin.css";
 
 export const dynamic = "force-dynamic";
@@ -34,13 +39,16 @@ export default async function AdminInductionsPage({
   const { cycle: cycleParam } = await searchParams;
   const selected = cycles.find((c) => c.id === cycleParam) ?? cycles[0] ?? null;
 
-  const applications = selected
-    ? await prisma.application.findMany({
-        where: { cycleId: selected.id },
-        orderBy: { createdAt: "desc" },
-        include: { user: { select: { email: true, name: true } } },
-      })
-    : [];
+  const [applications, questions] = selected
+    ? await Promise.all([
+        prisma.application.findMany({
+          where: { cycleId: selected.id },
+          orderBy: { createdAt: "desc" },
+          include: { user: { select: { email: true, name: true } } },
+        }),
+        questionsForCycle(selected.id),
+      ])
+    : [[], []];
 
   return (
     <main className="admin-wrap">
@@ -76,6 +84,15 @@ export default async function AdminInductionsPage({
         }))}
         selectedCycleId={selected?.id ?? null}
       />
+
+      {selected && (
+        <QuestionsManager
+          cycleId={selected.id}
+          cycleTitle={selected.title}
+          questions={questions}
+          hasApplications={applications.length > 0}
+        />
+      )}
 
       {selected ? (
         <ApplicationsBoard
