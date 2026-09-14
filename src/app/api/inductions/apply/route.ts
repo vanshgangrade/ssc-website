@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applicationGate, gateMessage } from "@/lib/inductions/cycle";
-import { submitSchema, validateAnswers } from "@/lib/inductions/validation";
+import { BITS_EMAIL_RE, submitSchema, validateAnswers } from "@/lib/inductions/validation";
 import { questionsForCycle } from "@/lib/inductions/questionStore";
 import { sendApplicationConfirmationEmail } from "@/lib/email";
 
@@ -31,11 +31,23 @@ export async function POST(req: Request) {
 
   const { basics, answers } = parsed.data;
 
+  // The BITS email is no longer asked for — it is whatever Google account they
+  // signed in with. ALLOWED_EMAIL_DOMAIN already gates sign-in, but an
+  // application is keyed on this address, so assert the full student-email
+  // shape here rather than trusting the domain check alone.
+  const bitsEmail = (session.user.email ?? "").trim().toLowerCase();
+  if (!BITS_EMAIL_RE.test(bitsEmail)) {
+    return NextResponse.json(
+      { error: "Your Google account isn't a BITS Goa student email. Sign in with that account to apply." },
+      { status: 403 }
+    );
+  }
+
   // The client checks this too; this is the copy that counts — and it reads
   // the bank from the database, so a stale tab can't answer a question the
   // admins have since removed or reworded.
   const bank = await questionsForCycle(gate.cycle.id);
-  const checked = validateAnswers(bank, basics.departments, answers);
+  const checked = validateAnswers(bank, basics.verticals, answers);
   if (!checked.ok) {
     return NextResponse.json(
       { error: "Some required questions are still blank. Go back and fill them in." },
@@ -50,11 +62,10 @@ export async function POST(req: Request) {
         userId: session.user.id,
         fullName: basics.fullName,
         phone: basics.phone,
-        bitsEmail: basics.bitsEmail,
+        bitsEmail,
         bitsId: basics.bitsId,
         yearOfStudy: basics.yearOfStudy,
-        hostel: basics.hostel || null,
-        departments: basics.departments,
+        verticals: basics.verticals,
         answers: checked.stored,
       },
       select: { id: true },
@@ -62,10 +73,7 @@ export async function POST(req: Request) {
 
     // A failed confirmation email must never fail the application — the row
     // is already committed and the attempt is logged to EmailLog either way.
-    const to = basics.bitsEmail || session.user.email;
-    if (to) {
-      await sendApplicationConfirmationEmail(to, basics.fullName, basics.departments, application.id);
-    }
+    await sendApplicationConfirmationEmail(bitsEmail, basics.fullName, basics.verticals, application.id);
 
     return NextResponse.json({ id: application.id }, { status: 201 });
   } catch (error) {

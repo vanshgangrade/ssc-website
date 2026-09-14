@@ -26,7 +26,7 @@ export default async function InductionsPage() {
     session?.user?.id && gate.cycle
       ? await prisma.application.findUnique({
           where: { cycleId_userId: { cycleId: gate.cycle.id, userId: session.user.id } },
-          select: { id: true, createdAt: true, departments: true, status: true },
+          select: { id: true, createdAt: true, verticals: true, status: true },
         })
       : null;
 
@@ -52,7 +52,7 @@ export default async function InductionsPage() {
           ? {
               id: existing.id,
               submittedAt: existing.createdAt.toISOString(),
-              departments: existing.departments,
+              verticals: existing.verticals,
               status: existing.status,
             }
           : null

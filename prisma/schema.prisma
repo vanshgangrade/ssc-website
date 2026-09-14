@@ -193,7 +193,7 @@ model InductionQuestion {
   required Boolean @default(true)
   maxLength Int?
   // Empty means everyone answers it; otherwise only applicants who picked one
-  // of these department ids see it.
+  // of these vertical ids see it.
   onlyFor  String[]
   order    Int      @default(0)
 
@@ -223,9 +223,8 @@ model Application {
   bitsEmail   String
   bitsId      String
   yearOfStudy String
-  hostel      String?
-  // Crew departments the applicant is applying to, most-preferred first.
-  departments String[]
+  // Club verticals the applicant is applying to, most-preferred first.
+  verticals   String[]
 
   // Snapshot of the answered question bank: [{ id, section, prompt, type, answer }].
   // Stored denormalised on purpose — questions can be reworded between cycles
