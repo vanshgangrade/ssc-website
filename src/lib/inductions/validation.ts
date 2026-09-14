@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEPARTMENT_IDS, YEARS, allQuestionsFor, type Question } from "./questions";
+import { DEPARTMENT_IDS, YEARS, questionsFor, type Question } from "./questions";
 
 // Indian mobile numbers: optional +91/91/0 prefix, then 10 digits starting 6-9.
 // Accepts "+91 98765 43210", "09876543210", "9876543210" — stores the bare 10.
@@ -66,15 +66,17 @@ export function isBlank(value: string | string[] | undefined): boolean {
 }
 
 /**
- * Checks the answer map against the question bank for the chosen departments
- * and returns the answers to store, in the order they were asked. Runs on the
- * client for inline errors and again on the server, which is the one that counts.
+ * Checks the answer map against the cycle's question bank for the chosen
+ * departments and returns the answers to store, in the order they were asked.
+ * Runs on the client for inline errors and again on the server, which is the
+ * one that counts.
  */
 export function validateAnswers(
+  bank: Question[],
   departments: string[],
   answers: Record<string, string | string[]>
 ): { ok: true; stored: StoredAnswer[] } | { ok: false; errors: Record<string, string> } {
-  const questions = allQuestionsFor(departments);
+  const questions = questionsFor(bank, departments);
   const errors: Record<string, string> = {};
   const stored: StoredAnswer[] = [];
 
@@ -88,7 +90,7 @@ export function validateAnswers(
     }
 
     if (q.type === "multi") {
-      const picked = (Array.isArray(raw) ? raw : [raw]).filter((v) => q.options?.includes(v));
+      const picked = (Array.isArray(raw) ? raw : [raw]).filter((v) => q.options.includes(v));
       if (picked.length === 0 && q.required) {
         errors[q.id] = "Pick at least one option.";
       }
@@ -98,7 +100,7 @@ export function validateAnswers(
 
     const text = Array.isArray(raw) ? raw.join(", ") : raw.trim();
 
-    if (q.type === "choice" && !q.options?.includes(text)) {
+    if (q.type === "choice" && !q.options.includes(text)) {
       errors[q.id] = "Choose one of the options.";
     }
     if (q.maxLength && text.length > q.maxLength) {
@@ -111,6 +113,24 @@ export function validateAnswers(
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   return { ok: true, stored };
 }
+
+// What the admin question editor is allowed to save.
+export const questionInputSchema = z.object({
+  prompt: z.string().trim().min(3, "Write the question out.").max(1000),
+  hint: z.string().trim().max(500).nullable().optional(),
+  type: z.enum(["short", "long", "choice", "multi"]),
+  options: z.array(z.string().trim().min(1).max(200)).max(30).default([]),
+  required: z.boolean().default(true),
+  maxLength: z.number().int().min(10).max(10000).nullable().optional(),
+  onlyFor: z.array(z.enum(DEPARTMENT_IDS as [string, ...string[]])).max(10).default([]),
+}).refine(
+  (q) => (q.type === "choice" || q.type === "multi" ? q.options.length >= 2 : true),
+  { message: "Give the applicant at least two options to pick from.", path: ["options"] }
+);
+
+export const reorderSchema = z.object({
+  orderedIds: z.array(z.string()).min(1),
+});
 
 export const reviewSchema = z.object({
   status: z.enum(["SUBMITTED", "SHORTLISTED", "WAITLISTED", "REJECTED", "ACCEPTED"]),

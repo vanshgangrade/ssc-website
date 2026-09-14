@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applicationGate, gateMessage } from "@/lib/inductions/cycle";
 import { submitSchema, validateAnswers } from "@/lib/inductions/validation";
+import { questionsForCycle } from "@/lib/inductions/questionStore";
 import { sendApplicationConfirmationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
@@ -30,8 +31,11 @@ export async function POST(req: Request) {
 
   const { basics, answers } = parsed.data;
 
-  // The client checks this too; this is the copy that counts.
-  const checked = validateAnswers(basics.departments, answers);
+  // The client checks this too; this is the copy that counts — and it reads
+  // the bank from the database, so a stale tab can't answer a question the
+  // admins have since removed or reworded.
+  const bank = await questionsForCycle(gate.cycle.id);
+  const checked = validateAnswers(bank, basics.departments, answers);
   if (!checked.ok) {
     return NextResponse.json(
       { error: "Some required questions are still blank. Go back and fill them in." },

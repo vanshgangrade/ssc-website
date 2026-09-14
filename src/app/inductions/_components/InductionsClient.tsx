@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { signIn, signOut } from "next-auth/react";
-import { DEPARTMENTS, departmentName } from "@/lib/inductions/questions";
+import { DEPARTMENTS, departmentName, type Question } from "@/lib/inductions/questions";
 
 // Client-only: the form restores its draft from sessionStorage during its
 // first render, which there is no sensible server equivalent of. Skipping the
@@ -107,6 +107,7 @@ export default function InductionsClient({
   isOpen,
   closedMessage,
   existing,
+  questions,
 }: {
   session: SessionSummary;
   cycleTitle: string;
@@ -114,6 +115,7 @@ export default function InductionsClient({
   isOpen: boolean;
   closedMessage: string;
   existing: Existing;
+  questions: Question[];
 }) {
   // Flips to true the moment the form posts successfully, so the thank-you
   // shows without a round trip. A refresh lands on the same state from the
@@ -167,7 +169,7 @@ export default function InductionsClient({
               </div>
             ) : (
               isOpen && (
-                <button className="ind-btn ind-btn-hero" onClick={() => signIn("google")}>
+                <button className="ind-btn ind-btn-hero" onClick={() => signIn("google", { callbackUrl: "/inductions" })}>
                   Sign in to apply <span aria-hidden="true">→</span>
                 </button>
               )
@@ -216,6 +218,7 @@ export default function InductionsClient({
               </div>
             ) : session ? (
               <ApplyFlow
+                questions={questions}
                 signedInEmail={session.email}
                 signedInName={session.name}
                 onSubmitted={() => setJustSubmitted(true)}
@@ -227,7 +230,7 @@ export default function InductionsClient({
                 <p className="ind-done-body">
                   Your draft saves as you go, so you can leave the tab and come back to it.
                 </p>
-                <button className="ind-btn" onClick={() => signIn("google")}>
+                <button className="ind-btn" onClick={() => signIn("google", { callbackUrl: "/inductions" })}>
                   Sign in with Google
                 </button>
               </div>

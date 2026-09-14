@@ -39,7 +39,7 @@ src/app/signin/page.tsx      Google sign-in page
 src/app/admin/page.tsx       admin dashboard (protected, server-rendered)
 src/app/api/vote/route.ts    cast/read your own vote
 src/app/api/admin/*          admin-only stats + poll open/close toggle
-src/lib/inductions/*         crew inductions: question bank, validation, cycle gate
+src/lib/inductions/*         crew inductions: departments, question store, validation, cycle gate
 src/app/inductions/*         public induction landing page + multi-step form
 src/app/admin/inductions/*   admin review panel (filters, detail drawer, CSV)
 src/app/api/inductions/*     application submit endpoint
@@ -141,24 +141,30 @@ Google Forms, with an admin review panel behind it.
 
 ### Changing the questions
 
-Everything asked is in `src/lib/inductions/questions.ts` — departments, the
-general question bank, and per-department questions. Edit that one file and
-both the form and the admin panel follow. Question types are `short`, `long`,
-`choice`, and `multi`.
+Questions live in the database, per cycle, and are edited from
+**/admin/inductions** — add, reword, reorder, retype, mark required/optional,
+set character limits, and choose whether a question is asked of everyone or
+only of applicants who picked particular departments. No deploy needed.
 
-Two rules when editing between cycles:
+`DEFAULT_QUESTIONS` in `src/lib/inductions/questions.ts` is only the starter
+set a brand-new cycle is seeded with when there is no previous cycle to copy
+from. The admin panel's "Load starter set" button restores it (refused once
+applications have come in).
 
-- Keep a question's `id` stable if you want its answers to stay comparable
-  across cycles — answers are stored keyed by `id`.
-- Give a **new** question a **new** `id`. Reusing an old id on a reworded
-  question makes past answers look like replies to the new wording.
+Answers are stored on each application against a snapshot of the prompt, so
+rewording a question never rewrites what past applicants were actually asked.
+
+The `DEPARTMENTS` list is still code — department ids are referenced by stored
+applications and by each question's "ask this of", so changing them is a
+migration, not an edit.
 
 ### Starting a cycle
 
 Applications are always scoped to an `InductionCycle`, so next semester's
 drive starts clean without touching this one's data. In `/admin/inductions`,
-create a cycle (it starts closed), set a deadline if you want one, then open
-it. The newest cycle is the one `/inductions` shows.
+create a cycle (it starts closed and inherits the previous cycle's questions),
+edit the questions, set a deadline if you want one, then open it. The newest
+cycle is the one `/inductions` shows.
 
 ## Deploying to Vercel
 

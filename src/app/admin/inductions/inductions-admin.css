@@ -274,3 +274,121 @@
     padding: 20px 16px 32px;
   }
 }
+
+/* ---------- question editor ---------- */
+.iq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.iq-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(232, 179, 65, 0.14);
+  border-radius: 3px;
+}
+.iq-order {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: none;
+}
+.iq-move {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--brass);
+  border-radius: 2px;
+  color: var(--ash);
+  font-size: 12px;
+  line-height: 1;
+  transition: border-color 0.2s, color 0.2s;
+}
+.iq-move:hover:not(:disabled) {
+  border-color: var(--marquee);
+  color: var(--marquee);
+}
+.iq-move:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.iq-main {
+  flex: 1;
+  min-width: 0;
+}
+.iq-prompt {
+  color: var(--screen);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.iq-meta {
+  margin-top: 5px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+  line-height: 1.5;
+}
+.iq-options {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ash);
+}
+.iq-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+}
+.iq-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.iq-editor {
+  margin-top: 18px;
+  padding: 20px 18px;
+  border: 1px solid var(--marquee);
+  border-radius: 3px;
+  background: rgba(232, 179, 65, 0.04);
+}
+.iq-editor h3 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  color: var(--screen);
+  margin-bottom: 18px;
+}
+.iq-editor-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 18px;
+}
+.iq-editor .ia-input {
+  width: 100%;
+}
+.iq-depts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+.iq-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 560px) {
+  .iq-row {
+    flex-wrap: wrap;
+  }
+  .iq-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+}

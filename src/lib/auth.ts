@@ -17,6 +17,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // Without this, Google silently reuses whichever account the browser is
+      // already signed into. For anyone whose first account is a personal
+      // Gmail, that means an instant "not eligible" bounce with no way to
+      // pick a different account. Forcing the chooser every time lets them
+      // choose their BITS account.
+      authorization: { params: { prompt: "select_account" } },
     }),
   ],
   callbacks: {

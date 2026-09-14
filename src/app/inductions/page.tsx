@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applicationGate, gateMessage } from "@/lib/inductions/cycle";
+import { questionsForCycle } from "@/lib/inductions/questionStore";
 import InductionsClient from "./_components/InductionsClient";
 import "./inductions.css";
 
@@ -17,6 +18,8 @@ export const dynamic = "force-dynamic";
 
 export default async function InductionsPage() {
   const [session, gate] = await Promise.all([auth(), applicationGate()]);
+
+  const questions = gate.cycle ? await questionsForCycle(gate.cycle.id) : [];
 
   // Has this user already applied to the current cycle?
   const existing =
@@ -42,6 +45,7 @@ export default async function InductionsPage() {
       cycleTitle={gate.cycle?.title ?? "Crew Inductions"}
       closesAt={gate.cycle?.closesAt ? gate.cycle.closesAt.toISOString() : null}
       isOpen={gate.open}
+      questions={questions}
       closedMessage={gateMessage(gate)}
       existing={
         existing

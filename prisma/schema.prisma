@@ -169,6 +169,37 @@ model InductionCycle {
   createdAt DateTime  @default(now())
 
   applications Application[]
+  questions    InductionQuestion[]
+}
+
+// The question bank, scoped to a cycle so each drive can ask its own thing.
+// Editable from /admin/inductions — a new cycle copies the previous cycle's
+// questions (or the code defaults, for the very first one) so it is never
+// born empty.
+//
+// Answers on Application are stored denormalised against a snapshot of the
+// prompt, so rewording a question here never rewrites what past applicants
+// were actually asked.
+model InductionQuestion {
+  id      String @id @default(cuid())
+  cycleId String
+
+  prompt   String  @db.Text
+  hint     String? @db.Text
+  // "short" | "long" | "choice" | "multi" — kept as a string rather than an
+  // enum so adding a type later doesn't need a migration on this column.
+  type     String
+  options  String[]
+  required Boolean @default(true)
+  maxLength Int?
+  // Empty means everyone answers it; otherwise only applicants who picked one
+  // of these department ids see it.
+  onlyFor  String[]
+  order    Int      @default(0)
+
+  cycle InductionCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@index([cycleId, order])
 }
 
 enum ApplicationStatus {

@@ -33,7 +33,7 @@ export default function QuestionField({
           className="ind-input"
           type="text"
           value={text}
-          maxLength={question.maxLength}
+          maxLength={question.maxLength ?? undefined}
           onChange={(e) => onChange(e.target.value)}
           autoComplete="off"
         />
@@ -46,7 +46,7 @@ export default function QuestionField({
             className="ind-textarea"
             rows={5}
             value={text}
-            maxLength={question.maxLength}
+            maxLength={question.maxLength ?? undefined}
             onChange={(e) => onChange(e.target.value)}
           />
           {question.maxLength && (
@@ -59,7 +59,7 @@ export default function QuestionField({
 
       {question.type === "choice" && (
         <div className="ind-options" role="radiogroup" aria-labelledby={fieldId}>
-          {question.options?.map((opt) => (
+          {question.options.map((opt) => (
             <button
               key={opt}
               type="button"
@@ -78,7 +78,7 @@ export default function QuestionField({
 
       {question.type === "multi" && (
         <div className="ind-options">
-          {question.options?.map((opt) => {
+          {question.options.map((opt) => {
             const on = picked.includes(opt);
             return (
               <button
