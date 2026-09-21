@@ -140,11 +140,17 @@ Google Forms, with an admin review panel behind it.
   set a status with a note and a 1-5 rating, and download a CSV (one column
   per question).
 - **AI summary** — inside an open application, "Summarize with AI" sends that
-  applicant's answers to Groq (`lib/inductions/summarize.ts`) and shows a
+  applicant's answers to Gemini (`lib/inductions/summarize.ts`) and shows a
   short bullet summary above the raw responses, for a reviewer skimming a
-  long queue. Needs `GROQ_API_KEY` (free tier at
-  [console.groq.com/keys](https://console.groq.com/keys)); the button stays
-  disabled without it, everything else on the page works as normal.
+  long queue. Needs `GEMINI_API_KEY` (free tier at
+  [aistudio.google.com/apikey](https://aistudio.google.com/apikey)); the
+  button stays disabled without it, everything else on the page works as
+  normal. Generated once per applicant and cached on `Application.aiSummary`
+  — it's never recomputed, and it never leaves this database (nothing AI-
+  generated is written into source control). To warm the whole queue ahead
+  of a review session instead of waiting on each reviewer's first click, run
+  `npm run db:backfill-summaries` (optionally `-- <cycleId>` to scope it to
+  one cycle) — it skips anything already summarized, so it's safe to re-run.
 
 ### Changing the questions
 

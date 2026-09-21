@@ -2,11 +2,12 @@ import { verticalName } from "./questions";
 import { isBlank, type StoredAnswer } from "./validation";
 
 // Summarizes one applicant's answers for the admin review drawer. Raw fetch
-// against Groq's OpenAI-compatible chat completions API, same pattern as the
-// Brevo/ZeptoMail calls in lib/email.ts, rather than pulling in an SDK for
-// one endpoint. Model is overridable because Groq retires/renames hosted
-// models faster than most providers.
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+// against Gemini's generateContent API, same pattern as the Brevo/ZeptoMail
+// calls in lib/email.ts, rather than pulling in an SDK for one endpoint.
+// Model is overridable because Google retires/renames hosted models faster
+// than most providers (gemini-2.5-flash, the obvious pick when this was
+// written, was already pulled for new API keys by the time this shipped).
+const DEFAULT_MODEL = "gemini-3.6-flash";
 
 const SYSTEM_PROMPT = `You help a student film club's induction committee review crew applications quickly. Given one applicant's answers, write a short, neutral summary for a reviewer who hasn't read the raw responses yet.
 
@@ -27,9 +28,9 @@ type SummarizeInput = {
 type SummarizeResult = { ok: true; summary: string } | { ok: false; error: string };
 
 export async function summarizeApplication(input: SummarizeInput): Promise<SummarizeResult> {
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return { ok: false, error: "AI summarization isn't configured (GROQ_API_KEY is not set)." };
+    return { ok: false, error: "AI summarization isn't configured (GEMINI_API_KEY is not set)." };
   }
 
   const answered = input.answers.filter((a) => !isBlank(a.answer));
@@ -46,36 +47,38 @@ Applying for: ${input.verticals.map(verticalName).join(", ") || "no vertical sel
 
 ${qa}`;
 
+  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+
   let res: Response;
   try {
-    res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        "x-goog-api-key": apiKey,
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL || DEFAULT_MODEL,
-        max_tokens: 500,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: prompt },
-        ],
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        // Plain-text bullet summarization doesn't need extended thinking —
+        // skipping it keeps this fast and avoids burning the output budget
+        // on reasoning tokens instead of the summary itself.
+        generationConfig: { maxOutputTokens: 500, thinkingConfig: { thinkingBudget: 0 } },
       }),
     });
   } catch (err) {
-    console.error("Groq summarize call failed to send:", err);
+    console.error("Gemini summarize call failed to send:", err);
     return { ok: false, error: "Could not reach the AI provider, try again." };
   }
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error("Groq summarize call rejected:", res.status, body);
+    console.error("Gemini summarize call rejected:", res.status, body);
     return { ok: false, error: "The AI provider rejected the request." };
   }
 
   const data = await res.json().catch(() => null);
-  const summary = data?.choices?.[0]?.message?.content?.trim();
+  const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
   if (!summary) {
     return { ok: false, error: "The AI provider returned an empty response." };
   }

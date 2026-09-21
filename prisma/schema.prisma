@@ -238,6 +238,11 @@ model Application {
   reviewedBy String?
   reviewedAt DateTime?
 
+  // Generated once by "Summarize with AI" (or the backfill script) and
+  // cached here so it's never recomputed — no repeat API calls, and it
+  // never leaves this private database. Null until first generated.
+  aiSummary String? @db.Text
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

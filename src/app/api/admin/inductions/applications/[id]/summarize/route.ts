@@ -13,10 +13,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const application = await prisma.application.findUnique({
     where: { id },
-    select: { fullName: true, yearOfStudy: true, verticals: true, answers: true },
+    select: { fullName: true, yearOfStudy: true, verticals: true, answers: true, aiSummary: true },
   });
   if (!application) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 });
+  }
+
+  // Generated once, cached on the row from then on — reopening the drawer,
+  // even in a different session or by a different reviewer, never re-calls
+  // the AI provider for an applicant that's already been summarized.
+  if (application.aiSummary) {
+    return NextResponse.json({ summary: application.aiSummary, cached: true });
   }
 
   const result = await summarizeApplication({
@@ -30,5 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: result.error }, { status: 502 });
   }
 
-  return NextResponse.json({ summary: result.summary });
+  await prisma.application.update({ where: { id }, data: { aiSummary: result.summary } });
+
+  return NextResponse.json({ summary: result.summary, cached: false });
 }

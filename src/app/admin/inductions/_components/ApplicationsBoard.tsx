@@ -16,6 +16,7 @@ export type AdminApplication = {
   answers: StoredAnswer[];
   status: string;
   rating: number | null;
+  aiSummary: string | null;
   reviewNote: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
@@ -73,6 +74,9 @@ export default function ApplicationsBoard({
   }, [applications, statusFilter, vertFilter, query]);
 
   const open = applications.find((a) => a.id === openId) ?? null;
+  // A freshly-generated summary from this session takes precedence, but
+  // otherwise fall back to whatever's already cached on the row in the DB.
+  const summaryText = open ? summaries[open.id] ?? open.aiSummary : null;
 
   function openApplication(a: AdminApplication) {
     setOpenId(a.id);
@@ -321,21 +325,23 @@ export default function ApplicationsBoard({
 
             <div className="ia-answers-head">
               <h4>Responses</h4>
-              <button
-                type="button"
-                className="admin-btn admin-btn-ghost"
-                onClick={summarize}
-                disabled={summarizing || !aiSummaryEnabled}
-                title={aiSummaryEnabled ? undefined : "Set GROQ_API_KEY to enable AI summaries"}
-              >
-                {summarizing ? "Summarizing…" : "Summarize with AI"}
-              </button>
+              {!summaryText && (
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-ghost"
+                  onClick={summarize}
+                  disabled={summarizing || !aiSummaryEnabled}
+                  title={aiSummaryEnabled ? undefined : "Set GEMINI_API_KEY to enable AI summaries"}
+                >
+                  {summarizing ? "Summarizing…" : "Summarize with AI"}
+                </button>
+              )}
             </div>
             {summaryError && <p className="admin-error">{summaryError}</p>}
-            {summaries[open.id] && (
+            {summaryText && (
               <div className="ia-summary">
                 <p className="ia-summary-label">AI summary</p>
-                {summaries[open.id]
+                {summaryText
                   .split("\n")
                   .map((line) => line.trim().replace(/^-\s*/, ""))
                   .filter(Boolean)
