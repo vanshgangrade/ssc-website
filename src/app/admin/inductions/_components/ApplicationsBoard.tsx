@@ -15,6 +15,7 @@ export type AdminApplication = {
   verticals: string[];
   answers: StoredAnswer[];
   status: string;
+  rating: number | null;
   reviewNote: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
@@ -31,9 +32,11 @@ function csvCell(value: string) {
 export default function ApplicationsBoard({
   cycleTitle,
   applications,
+  aiSummaryEnabled,
 }: {
   cycleTitle: string;
   applications: AdminApplication[];
+  aiSummaryEnabled: boolean;
 }) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -41,8 +44,12 @@ export default function ApplicationsBoard({
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [rating, setRating] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [summaries, setSummaries] = useState<Record<string, string>>({});
+  const [summarizing, setSummarizing] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   const counts = useMemo(() => {
     const base: Record<string, number> = { ALL: applications.length };
@@ -70,7 +77,9 @@ export default function ApplicationsBoard({
   function openApplication(a: AdminApplication) {
     setOpenId(a.id);
     setNote(a.reviewNote ?? "");
+    setRating(a.rating ?? null);
     setError(null);
+    setSummaryError(null);
   }
 
   async function review(status: string) {
@@ -81,7 +90,7 @@ export default function ApplicationsBoard({
       const res = await fetch(`/api/admin/inductions/applications/${open.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, reviewNote: note.trim() || undefined }),
+        body: JSON.stringify({ status, reviewNote: note.trim() || undefined, rating }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -93,6 +102,27 @@ export default function ApplicationsBoard({
       setError("Network error, try again.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function summarize() {
+    if (!open || summarizing) return;
+    setSummarizing(true);
+    setSummaryError(null);
+    try {
+      const res = await fetch(`/api/admin/inductions/applications/${open.id}/summarize`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSummaryError(data?.error ?? "Could not summarize this application.");
+        return;
+      }
+      setSummaries((prev) => ({ ...prev, [open.id]: data.summary }));
+    } catch {
+      setSummaryError("Network error, try again.");
+    } finally {
+      setSummarizing(false);
     }
   }
 
@@ -119,6 +149,7 @@ export default function ApplicationsBoard({
       "Year",
       "Verticals",
       "Status",
+      "Rating",
       "Review note",
       "Reviewed by",
       "Submitted",
@@ -141,6 +172,7 @@ export default function ApplicationsBoard({
         a.yearOfStudy,
         a.verticals.map(verticalName).join(" > "),
         a.status,
+        a.rating ? String(a.rating) : "",
         a.reviewNote ?? "",
         a.reviewedBy ?? "",
         new Date(a.createdAt).toLocaleString(),
@@ -287,6 +319,34 @@ export default function ApplicationsBoard({
               </div>
             </dl>
 
+            <div className="ia-answers-head">
+              <h4>Responses</h4>
+              <button
+                type="button"
+                className="admin-btn admin-btn-ghost"
+                onClick={summarize}
+                disabled={summarizing || !aiSummaryEnabled}
+                title={aiSummaryEnabled ? undefined : "Set GROQ_API_KEY to enable AI summaries"}
+              >
+                {summarizing ? "Summarizing…" : "Summarize with AI"}
+              </button>
+            </div>
+            {summaryError && <p className="admin-error">{summaryError}</p>}
+            {summaries[open.id] && (
+              <div className="ia-summary">
+                <p className="ia-summary-label">AI summary</p>
+                {summaries[open.id]
+                  .split("\n")
+                  .map((line) => line.trim().replace(/^-\s*/, ""))
+                  .filter(Boolean)
+                  .map((line, i) => (
+                    <p key={i} className="ia-summary-line">
+                      {line}
+                    </p>
+                  ))}
+              </div>
+            )}
+
             <div className="ia-answers">
               {open.answers.map((ans) => (
                 <div key={ans.id} className="ia-answer">
@@ -305,6 +365,25 @@ export default function ApplicationsBoard({
             </div>
 
             <div className="ia-review">
+              <span className="ia-review-label">Rating</span>
+              <div className="ia-stars" role="radiogroup" aria-label="Rate this applicant">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className="ia-star"
+                    data-filled={rating !== null && n <= rating}
+                    role="radio"
+                    aria-checked={rating === n}
+                    aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                    onClick={() => setRating(rating === n ? null : n)}
+                  >
+                    ★
+                  </button>
+                ))}
+                <span className="ia-rating-value">{rating ? `${rating}/5` : "Not rated"}</span>
+              </div>
+
               <label className="ia-review-label" htmlFor="ia-note">
                 Review note (visible to admins only)
               </label>

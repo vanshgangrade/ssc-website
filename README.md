@@ -137,7 +137,14 @@ Google Forms, with an admin review panel behind it.
   failed email never fails the application.
 - **Admin** — `/admin/inductions`: create cycles, open/close the form, set a
   deadline, filter by status and department, search, open any application,
-  set a status with a note, and download a CSV (one column per question).
+  set a status with a note and a 1-5 rating, and download a CSV (one column
+  per question).
+- **AI summary** — inside an open application, "Summarize with AI" sends that
+  applicant's answers to Groq (`lib/inductions/summarize.ts`) and shows a
+  short bullet summary above the raw responses, for a reviewer skimming a
+  long queue. Needs `GROQ_API_KEY` (free tier at
+  [console.groq.com/keys](https://console.groq.com/keys)); the button stays
+  disabled without it, everything else on the page works as normal.
 
 ### Changing the questions
 

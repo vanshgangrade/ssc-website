@@ -131,4 +131,5 @@ export const reorderSchema = z.object({
 export const reviewSchema = z.object({
   status: z.enum(["SUBMITTED", "SHORTLISTED", "WAITLISTED", "REJECTED", "ACCEPTED"]),
   reviewNote: z.string().trim().max(2000).optional(),
+  rating: z.number().int().min(1).max(5).nullable().optional(),
 });

@@ -232,6 +232,8 @@ model Application {
   answers Json
 
   status     ApplicationStatus @default(SUBMITTED)
+  // 1-5, set by whichever admin reviewed the application. Null until rated.
+  rating     Int?
   reviewNote String?
   reviewedBy String?
   reviewedAt DateTime?

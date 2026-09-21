@@ -16,17 +16,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
 
-  const { status, reviewNote } = parsed.data;
+  const { status, reviewNote, rating } = parsed.data;
 
   const application = await prisma.application.update({
     where: { id },
     data: {
       status,
       reviewNote: reviewNote ?? null,
+      rating: rating ?? null,
       reviewedBy: session.user.email ?? null,
       reviewedAt: new Date(),
     },
-    select: { id: true, status: true, reviewNote: true, reviewedBy: true, reviewedAt: true },
+    select: { id: true, status: true, reviewNote: true, rating: true, reviewedBy: true, reviewedAt: true },
   });
 
   return NextResponse.json({ application });

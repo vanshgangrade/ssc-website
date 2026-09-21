@@ -101,6 +101,7 @@ export default async function AdminInductionsPage({
       {selected ? (
         <ApplicationsBoard
           cycleTitle={selected.title}
+          aiSummaryEnabled={Boolean(process.env.GROQ_API_KEY)}
           applications={applications.map((a) => ({
             id: a.id,
             fullName: a.fullName,
@@ -111,6 +112,7 @@ export default async function AdminInductionsPage({
             verticals: a.verticals,
             answers: (a.answers ?? []) as unknown as StoredAnswer[],
             status: a.status,
+            rating: a.rating,
             reviewNote: a.reviewNote,
             reviewedBy: a.reviewedBy,
             reviewedAt: a.reviewedAt ? a.reviewedAt.toISOString() : null,
