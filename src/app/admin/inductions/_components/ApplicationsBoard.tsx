@@ -74,9 +74,9 @@ export default function ApplicationsBoard({
   }, [applications, statusFilter, vertFilter, query]);
 
   const open = applications.find((a) => a.id === openId) ?? null;
-  // A freshly-generated summary from this session takes precedence, but
-  // otherwise fall back to whatever's already cached on the row in the DB.
-  const summaryText = open ? summaries[open.id] ?? open.aiSummary : null;
+  // Only what's been revealed this session via the button — a cached DB
+  // value doesn't show until the reviewer actually taps "Summarize with AI".
+  const summaryText = open ? summaries[open.id] : undefined;
 
   function openApplication(a: AdminApplication) {
     setOpenId(a.id);
@@ -113,6 +113,16 @@ export default function ApplicationsBoard({
     if (!open || summarizing) return;
     setSummarizing(true);
     setSummaryError(null);
+
+    if (open.aiSummary) {
+      // Already cached — still show a brief loading beat so an already-
+      // summarized application feels the same as generating a fresh one.
+      await new Promise((r) => setTimeout(r, 900));
+      setSummaries((prev) => ({ ...prev, [open.id]: open.aiSummary! }));
+      setSummarizing(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/admin/inductions/applications/${open.id}/summarize`, {
         method: "POST",
@@ -330,8 +340,8 @@ export default function ApplicationsBoard({
                   type="button"
                   className="admin-btn admin-btn-ghost"
                   onClick={summarize}
-                  disabled={summarizing || !aiSummaryEnabled}
-                  title={aiSummaryEnabled ? undefined : "Set GEMINI_API_KEY to enable AI summaries"}
+                  disabled={summarizing || (!aiSummaryEnabled && !open.aiSummary)}
+                  title={!open.aiSummary && !aiSummaryEnabled ? "Set GEMINI_API_KEY to enable AI summaries" : undefined}
                 >
                   {summarizing ? "Summarizing…" : "Summarize with AI"}
                 </button>
