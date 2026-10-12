@@ -196,6 +196,17 @@
   text-decoration: none;
 }
 
+.recap-skip {
+  margin: 22px 0 0;
+}
+
+.recap-cta.secondary {
+  background: none;
+  color: var(--marquee);
+  border: 1px solid var(--marquee-dim);
+  margin-top: 12px;
+}
+
 @media (max-width: 520px) {
   .recap-wrap {
     padding: 0 34px;

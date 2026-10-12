@@ -38,11 +38,19 @@ export default function Drishyam3RecapPage() {
 
       <div className="recap-wrap">
         <header className="recap-hero">
-          <p className="recap-eyebrow">Silver Screen Club · Pre-show</p>
+          <p className="recap-eyebrow">Silver Screen Club</p>
           <h1 className="recap-title">
             Drishyam
             <span>The Conclusion</span>
           </h1>
+          <a
+            href="https://www.instagram.com/reels/DeECVALoq5S/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="recap-cta recap-skip"
+          >
+            ▶ Prefer video? Watch the recap on Instagram
+          </a>
           <p className="recap-lede">
             The final chapter assumes you remember everything that came before. If it has been a while, here is the whole
             story in one read. Take a few minutes with it, then go find your seat.
@@ -206,7 +214,16 @@ export default function Drishyam3RecapPage() {
 
         <footer className="recap-footer">
           <p>Now you&rsquo;re caught up. Lights down, phones off.</p>
-          <Link href="/" className="recap-cta">
+          <a
+            href="https://www.instagram.com/reels/DeECVALoq5S/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="recap-cta"
+          >
+            Watch on Instagram
+          </a>
+          <br />
+          <Link href="/" className="recap-cta secondary">
             Back to the Silver Screen Club
           </Link>
         </footer>
