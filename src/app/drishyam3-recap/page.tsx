@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import "./recap.css";
 
@@ -47,9 +48,21 @@ export default function Drishyam3RecapPage() {
             href="https://www.instagram.com/reels/DeECVALoq5S/"
             target="_blank"
             rel="noopener noreferrer"
-            className="recap-cta recap-skip"
+            className="recap-video"
           >
-            ▶ Prefer video? Watch the recap on Instagram
+            <Image
+              src="/recap/drishyam-recap-reel.jpg"
+              alt="Video thumbnail: Drishyam 1 & 2 in 90 seconds"
+              width={360}
+              height={640}
+              className="recap-video-thumb"
+              priority
+            />
+            <span className="recap-video-text">
+              <span className="recap-video-kicker">In a hurry?</span>
+              <strong>Watch Drishyam 1 &amp; 2 in 90 seconds</strong>
+              <span className="recap-video-cta">▶ Watch on Instagram</span>
+            </span>
           </a>
           <p className="recap-lede">
             The final chapter assumes you remember everything that came before. If it has been a while, here is the whole
