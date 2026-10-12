@@ -1,0 +1,211 @@
+.recap {
+  min-height: 100svh;
+  position: relative;
+  background: radial-gradient(120% 60% at 50% 0%, var(--curtain) 0%, var(--void) 55%);
+  padding: 56px 0 80px;
+}
+.recap-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 44px;
+  position: relative;
+  z-index: 2;
+  line-height: 1.7;
+  font-size: 16px;
+  color: var(--screen);
+}
+.recap-wrap p {
+  margin-bottom: 14px;
+}
+
+.recap-hero {
+  text-align: center;
+  padding: 24px 0 36px;
+}
+.recap-eyebrow {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--marquee);
+  margin-bottom: 14px;
+}
+.recap-title {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-weight: 400;
+  font-size: clamp(64px, 14vw, 120px);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+}
+.recap-title span {
+  display: block;
+  font-size: 0.45em;
+  letter-spacing: 0.2em;
+  color: var(--marquee);
+  margin-top: 8px;
+}
+.recap-lede {
+  margin-top: 24px;
+  color: var(--screen);
+  opacity: 0.9;
+}
+.recap-warning {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--ember);
+  color: var(--ember);
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.recap-card {
+  background: var(--void-soft);
+  border: 1px solid var(--brass);
+  padding: 22px 24px;
+  margin: 28px 0;
+}
+.recap-h2 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: 0.08em;
+  color: var(--marquee);
+  margin-bottom: 12px;
+}
+.recap-h2.big {
+  font-size: clamp(40px, 8vw, 56px);
+  color: var(--screen);
+  margin-bottom: 18px;
+}
+.recap-h2 em {
+  color: var(--ash);
+  font-style: normal;
+}
+.recap-part {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--marquee-dim);
+  margin: 40px 0 4px;
+}
+.recap-h3 {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--marquee);
+  margin: 26px 0 6px;
+}
+
+.recap-tldr {
+  padding-left: 22px;
+}
+.recap-tldr li {
+  margin-bottom: 8px;
+}
+.recap-tldr li::marker {
+  color: var(--marquee);
+  font-family: var(--font-space-mono), monospace;
+}
+
+.recap-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 48px 0 0;
+}
+.recap-divider span {
+  flex: 1;
+  height: 1px;
+  background: var(--brass);
+}
+.recap-divider i {
+  font-family: var(--font-space-mono), monospace;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.recap-cast {
+  list-style: none;
+}
+.recap-cast li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(107, 90, 58, 0.4);
+}
+.recap-cast li:last-child {
+  border-bottom: none;
+}
+.recap-cast strong {
+  font-weight: 600;
+}
+.recap-cast span {
+  grid-column: 1;
+  color: var(--ash);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.recap-cast em {
+  grid-column: 2;
+  grid-row: 1;
+  font-style: normal;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+  color: var(--marquee);
+  text-align: right;
+}
+
+.recap-bullets {
+  padding-left: 20px;
+}
+.recap-bullets li {
+  margin-bottom: 6px;
+}
+.recap-bullets li::marker {
+  color: var(--marquee);
+}
+
+.recap-footer {
+  text-align: center;
+  margin-top: 48px;
+}
+.recap-footer p {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.1em;
+}
+.recap-cta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 12px 22px;
+  background: var(--marquee);
+  color: var(--void);
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+@media (max-width: 520px) {
+  .recap-wrap {
+    padding: 0 34px;
+  }
+  .recap-cast li {
+    grid-template-columns: 1fr;
+  }
+  .recap-cast em {
+    grid-column: 1;
+    grid-row: auto;
+    text-align: left;
+  }
+}
