@@ -191,8 +191,11 @@ export default function Ballot({
           <button className="scrollcue" onClick={scrollToBallot} aria-label="Scroll to ballot" />
           <p className="scroll-label">Scroll</p>
           <button className="live-results-btn" onClick={scrollToResults}>
-            <span className="live-dot" />
+            <span className="live-dot" aria-hidden="true" />
             View live results
+            <span className="btn-arrow" aria-hidden="true">
+              ↓
+            </span>
           </button>
         </div>
       </header>
@@ -275,14 +278,6 @@ export default function Ballot({
       <footer>
         <p className="fmark">SSC</p>
         <p className="fsub">Silver Screen Club · BITS Pilani, Goa Campus</p>
-        <p className="fadmin">
-          <a href="/inductions">Join the crew, inductions</a>
-        </p>
-        {session?.isAdmin && (
-          <p className="fadmin">
-            <a href="/admin">Admin panel</a>
-          </p>
-        )}
       </footer>
     </>
   );

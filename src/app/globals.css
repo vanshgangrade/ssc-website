@@ -229,22 +229,40 @@ h1.title em {
 .live-results-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 10px;
   margin: 26px auto 0;
-  padding: 11px 20px;
-  border: 1px solid var(--marquee-dim);
+  padding: 14px 26px;
+  min-height: 48px;
   border-radius: 999px;
-  font-family: var(--font-space-mono), monospace;
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--marquee);
-  transition: border-color 0.25s, background 0.25s;
+  background: var(--marquee);
+  color: var(--void);
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 19px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--marquee-dim), 0 14px 24px -8px rgba(232, 179, 65, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
 }
-.live-results-btn:hover,
+.live-results-btn .live-dot {
+  margin-right: 0;
+  background: var(--ember);
+  box-shadow: 0 0 0 3px rgba(192, 67, 44, 0.25);
+}
+.live-results-btn .btn-arrow {
+  font-size: 18px;
+  line-height: 1;
+}
+.live-results-btn:hover {
+  background: #f0bf55;
+}
 .live-results-btn:active {
-  border-color: var(--marquee);
-  background: rgba(232, 179, 65, 0.08);
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--marquee-dim), 0 8px 16px -8px rgba(232, 179, 65, 0.35);
+}
+.live-results-btn:focus-visible {
+  outline: 2px solid var(--screen);
+  outline-offset: 3px;
 }
 
 /* ---------- auth chip ---------- */
