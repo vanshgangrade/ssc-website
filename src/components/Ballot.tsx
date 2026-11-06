@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import type { MovieDTO } from "@/lib/movies";
 
@@ -27,6 +27,7 @@ export default function Ballot({
   const [closesAt] = useState(initialClosesAt);
   const [pending, setPending] = useState<string | null>(null);
   const [fresh, setFresh] = useState<string | null>(null);
+  const [results, setResults] = useState<{ total: number; counts: Record<string, number>; at: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ballotRef = useRef<HTMLDivElement>(null);
   const introRef = useRef<HTMLDivElement>(null);
@@ -53,6 +54,30 @@ export default function Ballot({
     };
   }, [session]);
 
+  const refreshResults = useCallback(async () => {
+    try {
+      const res = await fetch("/api/results", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setResults({ total: data.total, counts: data.counts, at: Date.now() });
+    } catch {
+      // keep showing the last good numbers
+    }
+  }, []);
+
+  useEffect(() => {
+    const tick = () => {
+      if (!document.hidden) void refreshResults();
+    };
+    tick();
+    const timer = setInterval(tick, 2000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [refreshResults]);
+
   async function castVote(movieId: string) {
     if (!session) {
       signIn("google");
@@ -78,6 +103,7 @@ export default function Ballot({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Vote failed");
       }
+      void refreshResults();
       await minDelay;
       setFresh(movieId);
     } catch (err) {
@@ -207,8 +233,32 @@ export default function Ballot({
                 Standings
               </p>
               <h2>Where The Club Stands</h2>
-              <p>It&apos;ll be revealed later.</p>
+              <p>Live from the database, refreshed every 2 seconds.</p>
             </div>
+            <ol className="standings">
+              {movies.map((m) => {
+                const count = results?.counts[m.id] ?? 0;
+                const total = results?.total ?? 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <li key={m.id} className="standing" data-mine={myVote === m.id ? "true" : "false"}>
+                    <div className="standing-head">
+                      <span className="standing-name">{m.name}</span>
+                      <span className="standing-count">
+                        {count} {count === 1 ? "vote" : "votes"} · {pct}%
+                      </span>
+                    </div>
+                    <div className="standing-track">
+                      <div className="standing-bar" style={{ width: `${pct}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="standing-total">
+              {results?.total ?? 0} votes cast
+              {results && <> · updated {new Date(results.at).toLocaleTimeString()}</>}
+            </p>
           </section>
         </div>
       </main>
