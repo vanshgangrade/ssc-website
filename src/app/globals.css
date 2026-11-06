@@ -343,9 +343,11 @@ h1.title em {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 32px;
-  align-items: start;
+  align-items: stretch;
 }
 .reel-card {
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(165deg, var(--curtain) 0%, var(--curtain-deep) 100%);
   border: 1px solid rgba(232, 179, 65, 0.14);
   border-radius: 4px;
@@ -418,7 +420,8 @@ h1.title em {
 }
 
 .vote-row {
-  margin-top: 22px;
+  margin-top: auto;
+  padding-top: 22px;
   display: flex;
   flex-direction: column;
   gap: 10px;
