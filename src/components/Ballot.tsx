@@ -414,10 +414,6 @@ function YourTicket({ movieName, session }: { movieName: string; session: NonNul
             <dd>{session.name || session.email.split("@")[0]}</dd>
           </div>
           <div>
-            <dt>Email</dt>
-            <dd>{session.email}</dd>
-          </div>
-          <div>
             <dt>Venue</dt>
             <dd>The Auditorium</dd>
           </div>
@@ -426,10 +422,32 @@ function YourTicket({ movieName, session }: { movieName: string; session: NonNul
             <dd>8:00 pm</dd>
           </div>
         </dl>
+        <Barcode seed={`${session.email}|${movieName}`} />
       </div>
       <div className="ticket-stub" aria-hidden="true">
         <span>Admit one</span>
       </div>
     </div>
+  );
+}
+
+// Decorative only: bars derived from the seed so each ticket looks different but stays stable.
+function Barcode({ seed }: { seed: string }) {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  const bars: { x: number; w: number }[] = [];
+  let x = 0;
+  while (x < 190) {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+    const w = 1 + (h % 3);
+    if ((h >>> 8) % 4 !== 0) bars.push({ x, w });
+    x += w + 1 + ((h >>> 12) % 2);
+  }
+  return (
+    <svg className="ticket-barcode" viewBox="0 0 190 40" preserveAspectRatio="none" aria-hidden="true">
+      {bars.map((b) => (
+        <rect key={b.x} x={b.x} y={0} width={b.w} height={40} />
+      ))}
+    </svg>
   );
 }
