@@ -462,3 +462,37 @@
   border-radius: 4px;
   padding: 9px 10px;
 }
+
+.poster-cropper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.poster-crop-frame {
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  border: 1px solid var(--brass);
+  background: var(--void-soft);
+}
+.poster-crop-frame:active {
+  cursor: grabbing;
+}
+.poster-crop-frame img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  user-select: none;
+}
+.poster-crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 240px;
+}
+.poster-crop-hint {
+  font-size: 12px;
+  color: var(--ash);
+}
