@@ -436,7 +436,7 @@ function YourTicket({
         </p>
       )}
       <div className="ticket-main">
-        <p className="ticket-eyebrow">Silver Screen Club · Admit one</p>
+        <p className="ticket-eyebrow">Admit one</p>
         <h3 className="ticket-movie">{movieName}</h3>
         <dl className="ticket-fields">
           <div>
@@ -455,7 +455,7 @@ function YourTicket({
         <Barcode seed={`${session.email}|${movieName}`} />
       </div>
       <div className="ticket-stub" aria-hidden="true">
-        <span>Admit one</span>
+        <span>Silver Screen Club</span>
       </div>
     </div>
   );

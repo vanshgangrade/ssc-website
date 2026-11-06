@@ -560,8 +560,9 @@ h1.title em {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   font-family: var(--font-bebas-neue), sans-serif;
-  font-size: 20px;
-  letter-spacing: 0.3em;
+  font-size: 17px;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
   color: var(--void);
 }
 /* half-circle notches where the stub tears off */
