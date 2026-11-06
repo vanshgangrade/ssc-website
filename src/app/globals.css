@@ -490,6 +490,97 @@ h1.title em {
   color: var(--marquee);
 }
 
+/* ---------- your ticket ---------- */
+.your-ticket {
+  position: relative;
+  display: flex;
+  max-width: 560px;
+  margin: 32px auto 0;
+  background: linear-gradient(165deg, var(--curtain) 0%, var(--curtain-deep) 100%);
+  border: 1px solid var(--marquee-dim);
+  border-radius: 6px;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+}
+.ticket-main {
+  flex: 1;
+  min-width: 0;
+  padding: 22px 24px;
+}
+.ticket-eyebrow {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--marquee);
+}
+.ticket-movie {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-weight: 400;
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  margin: 8px 0 16px;
+}
+.ticket-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 18px;
+}
+.ticket-fields dt {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+.ticket-fields dd {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.ticket-stub {
+  position: relative;
+  width: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 2px dashed var(--brass);
+}
+.ticket-stub span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  color: var(--marquee);
+}
+/* half-circle notches where the stub tears off */
+.ticket-stub::before,
+.ticket-stub::after {
+  content: "";
+  position: absolute;
+  left: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--void);
+  border: 1px solid var(--marquee-dim);
+}
+.ticket-stub::before {
+  top: -11px;
+}
+.ticket-stub::after {
+  bottom: -11px;
+}
+@media (max-width: 480px) {
+  .ticket-fields {
+    grid-template-columns: 1fr;
+  }
+  .ticket-stub {
+    width: 44px;
+  }
+}
+
 /* ---------- results ---------- */
 .results {
   padding: 60px 0 90px;

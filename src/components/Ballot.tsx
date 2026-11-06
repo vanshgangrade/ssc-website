@@ -184,9 +184,37 @@ export default function Ballot({
 
           {error && <p className="vote-error">{error}</p>}
 
+          {myPick && session && (
+            <div className="your-ticket" aria-label="Your ticket">
+              <div className="ticket-main">
+                <p className="ticket-eyebrow">Silver Screen Club · Admit one</p>
+                <h3 className="ticket-movie">{myPick.name}</h3>
+                <dl className="ticket-fields">
+                  <div>
+                    <dt>Name</dt>
+                    <dd>{session.name || session.email.split("@")[0]}</dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{session.email}</dd>
+                  </div>
+                  <div>
+                    <dt>Venue</dt>
+                    <dd>The Auditorium</dd>
+                  </div>
+                  <div>
+                    <dt>Time</dt>
+                    <dd>8:00 pm</dd>
+                  </div>
+                </dl>
+              </div>
+              <div className="ticket-stub" aria-hidden="true">
+                <span>Admit one</span>
+              </div>
+            </div>
+          )}
           {myPick && (
             <div className="your-pick">
-              Your pick: <strong>{myPick.name}</strong> ·{" "}
               <button className="change-link" onClick={scrollToBallot}>
                 change vote
               </button>
