@@ -30,6 +30,7 @@ export default function Ballot({
   const [results, setResults] = useState<{ total: number; counts: Record<string, number>; at: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ballotRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLElement>(null);
   const introRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const countdown = useCountdown(closesAt);
@@ -118,6 +119,10 @@ export default function Ballot({
     ballotRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   }
 
+  function scrollToResults() {
+    resultsRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  }
+
   useIntroAnimation(introRef, reduced);
 
   const myPick = movies.find((m) => m.id === myVote);
@@ -185,6 +190,10 @@ export default function Ballot({
 
           <button className="scrollcue" onClick={scrollToBallot} aria-label="Scroll to ballot" />
           <p className="scroll-label">Scroll</p>
+          <button className="live-results-btn" onClick={scrollToResults}>
+            <span className="live-dot" />
+            View live results
+          </button>
         </div>
       </header>
 
@@ -226,7 +235,7 @@ export default function Ballot({
             </div>
           )}
 
-          <section className="results">
+          <section className="results" ref={resultsRef}>
             <div className="section-head" style={{ paddingTop: 20 }}>
               <p className="live-tag">
                 <span className="live-dot" />

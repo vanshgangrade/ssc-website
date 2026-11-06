@@ -226,6 +226,27 @@ h1.title em {
   color: var(--marquee-dim);
 }
 
+.live-results-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 26px auto 0;
+  padding: 11px 20px;
+  border: 1px solid var(--marquee-dim);
+  border-radius: 999px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--marquee);
+  transition: border-color 0.25s, background 0.25s;
+}
+.live-results-btn:hover,
+.live-results-btn:active {
+  border-color: var(--marquee);
+  background: rgba(232, 179, 65, 0.08);
+}
+
 /* ---------- auth chip ---------- */
 .auth-chip {
   display: flex;
