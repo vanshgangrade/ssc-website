@@ -492,10 +492,10 @@ h1.title em {
 
 /* ---------- your ticket ---------- */
 .your-ticket {
+  --notch: var(--curtain-deep);
   position: relative;
   display: flex;
-  max-width: 560px;
-  margin: 32px auto 0;
+  margin-top: 20px;
   background: linear-gradient(165deg, var(--curtain) 0%, var(--curtain-deep) 100%);
   border: 1px solid var(--marquee-dim);
   border-radius: 6px;
@@ -504,7 +504,7 @@ h1.title em {
 .ticket-main {
   flex: 1;
   min-width: 0;
-  padding: 22px 24px;
+  padding: 16px 16px 16px 18px;
 }
 .ticket-eyebrow {
   font-family: var(--font-space-mono), monospace;
@@ -516,15 +516,15 @@ h1.title em {
 .ticket-movie {
   font-family: var(--font-bebas-neue), sans-serif;
   font-weight: 400;
-  font-size: 36px;
+  font-size: 26px;
   line-height: 1;
   letter-spacing: 0.03em;
   margin: 8px 0 16px;
 }
 .ticket-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 18px;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 .ticket-fields dt {
   font-family: var(--font-space-mono), monospace;
@@ -534,12 +534,12 @@ h1.title em {
   color: var(--ash);
 }
 .ticket-fields dd {
-  font-size: 15px;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 .ticket-stub {
   position: relative;
-  width: 64px;
+  width: 40px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -563,7 +563,7 @@ h1.title em {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--void);
+  background: var(--notch);
   border: 1px solid var(--marquee-dim);
 }
 .ticket-stub::before {
@@ -571,14 +571,6 @@ h1.title em {
 }
 .ticket-stub::after {
   bottom: -11px;
-}
-@media (max-width: 480px) {
-  .ticket-fields {
-    grid-template-columns: 1fr;
-  }
-  .ticket-stub {
-    width: 44px;
-  }
 }
 
 /* ---------- results ---------- */
