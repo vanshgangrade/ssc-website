@@ -9,8 +9,8 @@ const voteSchema = z.object({
   movieId: z.string().min(1),
 });
 
-// Returns only *this user's* vote. Public aggregate counts live in /api/results;
-// per-voter details are admin-only (see /api/admin/stats).
+// Deliberately returns only *this user's* vote — never aggregate counts.
+// Totals are admin-only (see /api/admin/stats) so results stay hidden until reveal.
 export async function GET() {
   const session = await auth();
   if (!session?.user) {
