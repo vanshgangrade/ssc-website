@@ -582,6 +582,80 @@ h1.title em {
   bottom: -11px;
 }
 
+/* ---------- ticket printing / confirmation ---------- */
+.ticket-printing {
+  margin-top: 20px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed var(--brass);
+  border-radius: 6px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--marquee);
+}
+.ticket-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--brass);
+  border-top-color: var(--marquee);
+  border-radius: 50%;
+  animation: ticket-spin 0.7s linear infinite;
+}
+.ticket-confirmed {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--marquee);
+}
+.your-ticket.fresh {
+  margin-top: 44px;
+  animation: ticket-print 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.your-ticket.fresh .ticket-confirmed {
+  animation: ticket-confirm 0.5s ease 0.6s both;
+}
+@keyframes ticket-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ticket-print {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(-16px);
+  }
+  to {
+    clip-path: inset(-40px 0 0 0);
+    transform: translateY(0);
+  }
+}
+@keyframes ticket-confirm {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticket-spinner {
+    animation: none;
+  }
+  .your-ticket.fresh,
+  .your-ticket.fresh .ticket-confirmed {
+    animation: none;
+  }
+}
+
 /* ---------- results ---------- */
 .results {
   padding: 60px 0 90px;

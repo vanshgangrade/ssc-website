@@ -26,6 +26,7 @@ export default function Ballot({
   const [pollOpen, setPollOpen] = useState(initialPollOpen);
   const [closesAt] = useState(initialClosesAt);
   const [pending, setPending] = useState<string | null>(null);
+  const [fresh, setFresh] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ballotRef = useRef<HTMLDivElement>(null);
   const introRef = useRef<HTMLDivElement>(null);
@@ -60,11 +61,14 @@ export default function Ballot({
     if (myVote === movieId || pending) return;
 
     setError(null);
+    setFresh(null);
     setPending(movieId);
     const prevVote = myVote;
     setMyVote(movieId);
 
     try {
+      // Hold the "punching" state briefly so a fast response is still noticeable.
+      const minDelay = new Promise((resolve) => setTimeout(resolve, 900));
       const res = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,6 +78,8 @@ export default function Ballot({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Vote failed");
       }
+      await minDelay;
+      setFresh(movieId);
     } catch (err) {
       setMyVote(prevVote);
       setError(err instanceof Error ? err.message : "Could not save your vote. Try again.");
@@ -174,6 +180,7 @@ export default function Ballot({
                 movie={movie}
                 index={i}
                 session={session}
+                isFresh={fresh === movie.id}
                 isMine={myVote === movie.id}
                 isPending={pending === movie.id}
                 disabled={closed || pending !== null}
@@ -229,11 +236,13 @@ function ReelCard({
   isPending,
   disabled,
   session,
+  isFresh,
   onVote,
 }: {
   movie: MovieDTO;
   index: number;
   session: SessionSummary;
+  isFresh: boolean;
   isMine: boolean;
   isPending: boolean;
   disabled: boolean;
@@ -261,7 +270,15 @@ function ReelCard({
           <span className="stub-arrow">✂</span>
         </button>
       </div>
-      {isMine && session && <YourTicket movieName={movie.name} session={session} />}
+      {isMine && session && isPending && (
+        <div className="ticket-printing" role="status">
+          <span className="ticket-spinner" aria-hidden="true" />
+          Punching your ticket…
+        </div>
+      )}
+      {isMine && session && !isPending && (
+        <YourTicket movieName={movie.name} session={session} fresh={isFresh} />
+      )}
     </article>
   );
 }
@@ -402,9 +419,22 @@ function useIntroAnimation(ref: React.RefObject<HTMLDivElement | null>, reduced:
   }, [reduced]);
 }
 
-function YourTicket({ movieName, session }: { movieName: string; session: NonNullable<SessionSummary> }) {
+function YourTicket({
+  movieName,
+  session,
+  fresh,
+}: {
+  movieName: string;
+  session: NonNullable<SessionSummary>;
+  fresh: boolean;
+}) {
   return (
-    <div className="your-ticket" aria-label="Your ticket">
+    <div className={fresh ? "your-ticket fresh" : "your-ticket"} aria-label="Your ticket">
+      {fresh && (
+        <p className="ticket-confirmed" role="status">
+          ✓ Vote recorded
+        </p>
+      )}
       <div className="ticket-main">
         <p className="ticket-eyebrow">Silver Screen Club · Admit one</p>
         <h3 className="ticket-movie">{movieName}</h3>
