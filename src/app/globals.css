@@ -383,6 +383,8 @@ h1.title em {
 }
 .poster-frame {
   margin: 18px 0 20px;
+  aspect-ratio: 2 / 3;
+  background: var(--void-soft);
   border-radius: 2px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.4);
@@ -390,7 +392,8 @@ h1.title em {
 .poster-frame img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
 }
 .film-title {
   font-family: var(--font-bebas-neue), sans-serif;
