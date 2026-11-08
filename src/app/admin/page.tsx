@@ -10,6 +10,7 @@ import PaginatedVoters from "./_components/PaginatedVoters";
 import PaginatedRecommendations from "./_components/PaginatedRecommendations";
 import PaginatedEmailLogs from "./_components/PaginatedEmailLogs";
 import ExportButton from "./_components/ExportButton";
+import VotersExport from "./_components/VotersExport";
 import EmailTester from "./_components/EmailTester";
 import "./admin.css";
 
@@ -56,6 +57,14 @@ export default async function AdminPage({
     }),
     prisma.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
   ]);
+
+  const voterRows = votes.map((v) => ({
+    userId: v.userId,
+    createdAt: v.createdAt.toISOString(),
+    updatedAt: v.updatedAt.toISOString(),
+    user: v.user,
+    movie: v.movie,
+  }));
 
   const counts: Record<string, number> = Object.fromEntries(movies.map((m) => [m.id, 0]));
   for (const v of votes) {
@@ -142,16 +151,11 @@ export default async function AdminPage({
           </section>
 
           <section className="admin-card">
-            <h2>Voters</h2>
-            <PaginatedVoters
-              votes={votes.map((v) => ({
-                userId: v.userId,
-                createdAt: v.createdAt.toISOString(),
-                updatedAt: v.updatedAt.toISOString(),
-                user: v.user,
-                movie: v.movie,
-              }))}
-            />
+            <div className="admin-section-head">
+              <h2>Voters ({votes.length})</h2>
+              <VotersExport votes={voterRows} pollTitle={selectedPoll.title} />
+            </div>
+            <PaginatedVoters votes={voterRows} />
           </section>
         </>
       )}
