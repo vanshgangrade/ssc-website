@@ -291,6 +291,58 @@ h1.title em {
   text-shadow: 0 0 20px rgba(232, 179, 65, 0.25);
 }
 
+.winner-card {
+  margin: 22px auto 0;
+  max-width: 340px;
+  padding: 20px 18px;
+  text-align: center;
+  background: linear-gradient(165deg, var(--curtain) 0%, var(--curtain-deep) 100%);
+  border: 1px solid var(--marquee);
+  border-radius: 6px;
+  box-shadow: 0 0 40px -10px rgba(232, 179, 65, 0.35);
+}
+.winner-eyebrow {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--marquee);
+}
+.winner-body {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 14px;
+}
+.winner {
+  flex: 1 1 130px;
+  max-width: 200px;
+}
+.winner img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+.winner-name {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  margin-top: 12px;
+}
+.winner-votes {
+  margin-top: 12px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
 .poll-closed-banner {
   margin: 20px auto 0;
   max-width: 480px;

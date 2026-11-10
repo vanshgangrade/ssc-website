@@ -35,6 +35,10 @@ export default function Ballot({
   const countdown = useCountdown(closesAt);
   const closed = !pollOpen || countdown?.expired === true;
 
+  // Winner(s) are derived from the same live counts as the standings; a tie shows every leader.
+  const topCount = results ? Math.max(0, ...movies.map((m) => results.counts[m.id] ?? 0)) : 0;
+  const winners = closed && results && topCount > 0 ? movies.filter((m) => (results.counts[m.id] ?? 0) === topCount) : [];
+
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
@@ -182,6 +186,24 @@ export default function Ballot({
           )}
 
           {closed && <p className="poll-closed-banner">Voting is currently closed</p>}
+
+          {winners.length > 0 && results && (
+            <div className="winner-card" role="status">
+              <p className="winner-eyebrow">{winners.length > 1 ? "It's a tie" : "The club has spoken"}</p>
+              <div className="winner-body">
+                {winners.map((w) => (
+                  <div className="winner" key={w.id}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- posters can be admin-uploaded data: URIs */}
+                    <img src={w.posterUrl} alt={`${w.name} poster`} />
+                    <h2 className="winner-name">{w.name}</h2>
+                  </div>
+                ))}
+              </div>
+              <p className="winner-votes">
+                {winners.length > 1 ? `${topCount} votes each` : `${topCount} of ${results.total} votes`}
+              </p>
+            </div>
+          )}
 
           <button className="scrollcue" onClick={scrollToBallot} aria-label="Scroll to ballot" />
           <p className="scroll-label">Scroll</p>
