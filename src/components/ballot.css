@@ -829,17 +829,125 @@
   margin: 0 0.3em 0 0.7em;
 }
 
+/* casting overlay: shown while the vote is saved, then flips to a tick before the ticket */
+.ssc .casting {
+  position: fixed;
+  inset: 0;
+  z-index: 92;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(4, 4, 6, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s, visibility 0s 0.25s;
+}
+.ssc .casting.show {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s;
+}
+.ssc .cast-ring {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  border-top-color: var(--c, var(--sub));
+  box-shadow: 0 0 50px color-mix(in srgb, var(--c, var(--sub)) 40%, transparent);
+  animation: ssc-spin 0.8s linear infinite;
+  transition: border-color 0.3s, background-color 0.3s, transform 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.ssc .cast-ring svg {
+  width: 44px;
+  height: 44px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset 0.4s ease 0.1s;
+}
+.ssc .casting.done .cast-ring {
+  animation: none;
+  border-color: var(--c, var(--sub));
+  background: var(--c, var(--sub));
+  transform: scale(1.1);
+}
+.ssc .casting.done .cast-ring svg {
+  stroke-dashoffset: 0;
+}
+@keyframes ssc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ssc .cast-title {
+  margin-top: 10px;
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  font-size: 15px;
+  color: var(--mute);
+}
+.ssc .casting.done .cast-title {
+  color: var(--ink);
+}
+.ssc .cast-film {
+  font-family: var(--poster-type);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(2rem, 8vw, 3.6rem);
+  line-height: 0.95;
+  text-wrap: balance;
+}
+.ssc .cast-bar {
+  width: min(260px, 60vw);
+  height: 3px;
+  margin-top: 8px;
+  background: var(--line);
+  overflow: hidden;
+}
+.ssc .cast-bar i {
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: var(--c, var(--sub));
+  animation: ssc-slide 1s ease-in-out infinite;
+}
+.ssc .casting.done .cast-bar i {
+  animation: none;
+  width: 100%;
+  transition: width 0.3s;
+}
+@keyframes ssc-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
 /* the souvenir ticket */
 .ssc .tk-wrap {
   position: fixed;
   inset: 0;
   z-index: 90;
   display: grid;
-  place-content: center;
+  place-content: safe center; /* "safe" keeps the top reachable when the ticket is taller than the screen */
   justify-items: center;
   gap: 24px;
   padding: 20px;
-  overflow: auto;
+  overflow: hidden auto;
   background: rgba(4, 4, 6, 0.84);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);

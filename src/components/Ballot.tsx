@@ -42,6 +42,8 @@ export default function Ballot({
   const [error, setError] = useState<string | null>(null);
   const [ticketOpen, setTicketOpen] = useState(false);
   const [voteNo, setVoteNo] = useState<number | null>(null);
+  // Full-screen feedback while a vote is being saved: "saving" spins, "done" shows the tick.
+  const [casting, setCasting] = useState<"saving" | "done" | null>(null);
   const [chartSeen, setChartSeen] = useState(false);
   const ballotRef = useRef<HTMLElement>(null);
   const hallRef = useRef<HTMLDivElement>(null);
@@ -117,12 +119,13 @@ export default function Ballot({
 
     setError(null);
     setPending(movieId);
+    setCasting("saving");
     const prevVote = myVote;
     setMyVote(movieId);
 
     try {
-      // Hold the "saving" state briefly so a fast response is still noticeable.
-      const minDelay = new Promise((resolve) => setTimeout(resolve, 700));
+      // Hold the "casting" overlay for a beat so even an instant response visibly registers.
+      const minDelay = new Promise((resolve) => setTimeout(resolve, 1100));
       const res = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,8 +138,14 @@ export default function Ballot({
       const fresh = await refreshResults();
       await minDelay;
       setVoteNo(fresh?.total ?? null);
+      // Flash the confirmation tick, then hand over to the ticket.
+      setCasting("done");
+      if (navigator.vibrate) navigator.vibrate(35);
+      await new Promise((resolve) => setTimeout(resolve, 750));
+      setCasting(null);
       setTicketOpen(true);
     } catch (err) {
+      setCasting(null);
       setMyVote(prevVote);
       setError(err instanceof Error ? err.message : "Could not save your vote. Try again.");
     } finally {
@@ -484,6 +493,28 @@ export default function Ballot({
           <small>View ticket</small>
         </button>
       )}
+
+      <div
+        className={["casting", casting ? "show" : "", casting === "done" ? "done" : ""].join(" ").trim()}
+        role="status"
+        aria-live="assertive"
+        style={mine ? ({ "--c": mine.color } as Css) : undefined}
+      >
+        {casting && (
+          <>
+            <span className="cast-ring" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
+            </span>
+            <p className="cast-title">{casting === "done" ? "Vote recorded" : "Casting your vote"}</p>
+            {mine && <p className="cast-film">{mine.name}</p>}
+            <span className="cast-bar" aria-hidden="true">
+              <i />
+            </span>
+          </>
+        )}
+      </div>
 
       {mine && session && (
         <div
