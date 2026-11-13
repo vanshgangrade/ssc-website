@@ -34,7 +34,7 @@ export default async function SignInPage({
         <form
           action={async () => {
             "use server";
-            await signIn("google", { redirectTo: callbackUrl || "/" });
+            await signIn("google", { redirectTo: callbackUrl || "/vote" });
           }}
         >
           <button type="submit" className="google-btn">
