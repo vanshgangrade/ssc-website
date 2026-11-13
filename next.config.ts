@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // The club's landing page is a single static file in public/club/; serve it at /club.
+  async rewrites() {
+    return [{ source: "/club", destination: "/club/index.html" }];
+  },
 };
 
 export default nextConfig;

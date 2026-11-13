@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { signIn, signOut } from "next-auth/react";
 import type { MovieDTO } from "@/lib/movies";
+import "./ballot.css";
 
 type SessionSummary = {
   email: string;
@@ -10,6 +12,16 @@ type SessionSummary = {
   image: string | null;
   isAdmin: boolean;
 } | null;
+
+type Results = { total: number; counts: Record<string, number>; at: number };
+
+// Fallback accent per ballot slot, used until (or if) a colour can be read off the poster.
+const PALETTE = ["#e2552a", "#3d7be0", "#e2c07a", "#3fb68b", "#b24fd1", "#e04a8a"];
+const SEATS = 120;
+const COLS = 24;
+const ROWS = 5;
+
+type Css = CSSProperties & Record<`--${string}`, string | number>;
 
 export default function Ballot({
   session,
@@ -26,23 +38,31 @@ export default function Ballot({
   const [pollOpen, setPollOpen] = useState(initialPollOpen);
   const [closesAt] = useState(initialClosesAt);
   const [pending, setPending] = useState<string | null>(null);
-  const [fresh, setFresh] = useState<string | null>(null);
-  const [results, setResults] = useState<{ total: number; counts: Record<string, number>; at: number } | null>(null);
+  const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const ballotRef = useRef<HTMLDivElement>(null);
-  const introRef = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion();
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [voteNo, setVoteNo] = useState<number | null>(null);
+  const [chartSeen, setChartSeen] = useState(false);
+  const ballotRef = useRef<HTMLElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const doneRef = useRef<HTMLButtonElement>(null);
   const countdown = useCountdown(closesAt);
   const closed = !pollOpen || countdown?.expired === true;
+  const colors = usePosterColors(movies);
+  const films = useMemo(
+    () => movies.map((m, i) => ({ ...m, ...parseTagline(m.tagline), color: colors[m.id] ?? PALETTE[i % PALETTE.length] })),
+    [movies, colors],
+  );
 
-  // Winner(s) are derived from the same live counts as the standings; a tie shows every leader.
-  const topCount = results ? Math.max(0, ...movies.map((m) => results.counts[m.id] ?? 0)) : 0;
-  const winners = closed && results && topCount > 0 ? movies.filter((m) => (results.counts[m.id] ?? 0) === topCount) : [];
+  // Winner(s) come from the same live counts as the standings; a tie shows every leader.
+  const total = results?.total ?? 0;
+  const topCount = results ? Math.max(0, ...films.map((m) => results.counts[m.id] ?? 0)) : 0;
+  const winners = closed && results && topCount > 0 ? films.filter((m) => (results.counts[m.id] ?? 0) === topCount) : [];
+  const mine = films.find((m) => m.id === myVote) ?? null;
 
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
-
     fetch("/api/vote")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -52,20 +72,21 @@ export default function Ballot({
         }
       })
       .catch(() => {});
-
     return () => {
       cancelled = true;
     };
   }, [session]);
 
-  const refreshResults = useCallback(async () => {
+  const refreshResults = useCallback(async (): Promise<Results | null> => {
     try {
       const res = await fetch("/api/results", { cache: "no-store" });
-      if (!res.ok) return;
+      if (!res.ok) return null;
       const data = await res.json();
-      setResults({ total: data.total, counts: data.counts, at: Date.now() });
+      const next = { total: data.total, counts: data.counts, at: Date.now() };
+      setResults(next);
+      return next;
     } catch {
-      // keep showing the last good numbers
+      return null; // keep showing the last good numbers
     }
   }, []);
 
@@ -87,17 +108,20 @@ export default function Ballot({
       signIn("google");
       return;
     }
-    if (myVote === movieId || pending) return;
+    if (myVote === movieId) {
+      setTicketOpen(true);
+      return;
+    }
+    if (pending) return;
 
     setError(null);
-    setFresh(null);
     setPending(movieId);
     const prevVote = myVote;
     setMyVote(movieId);
 
     try {
-      // Hold the "punching" state briefly so a fast response is still noticeable.
-      const minDelay = new Promise((resolve) => setTimeout(resolve, 900));
+      // Hold the "saving" state briefly so a fast response is still noticeable.
+      const minDelay = new Promise((resolve) => setTimeout(resolve, 700));
       const res = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -107,9 +131,10 @@ export default function Ballot({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Vote failed");
       }
-      void refreshResults();
+      const fresh = await refreshResults();
       await minDelay;
-      setFresh(movieId);
+      setVoteNo(fresh?.total ?? null);
+      setTicketOpen(true);
     } catch (err) {
       setMyVote(prevVote);
       setError(err instanceof Error ? err.message : "Could not save your vote. Try again.");
@@ -118,262 +143,567 @@ export default function Ballot({
     }
   }
 
+  // Ticket: close on Escape, focus the main action when it opens.
+  useEffect(() => {
+    if (!ticketOpen) return;
+    doneRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTicketOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [ticketOpen]);
+
+  // Reveal-on-scroll, plus the one-time wave that fills the seating chart.
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>(".ssc .rv"));
+    if (!("IntersectionObserver" in window)) {
+      els.forEach((el) => el.classList.add("in"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add("in");
+          io.unobserve(e.target);
+          if (e.target === chartRef.current) setChartSeen(true);
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px" },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [films.length]);
+
   function scrollToBallot() {
-    ballotRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    ballotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  useIntroAnimation(introRef, reduced);
+  // ----- the screen -----
+  let screen: { film: (typeof films)[number] | null; kicker: string; title: string; subs: string };
+  if (films.length === 0) {
+    screen = { film: null, kicker: "Intermission", title: "Ballot coming soon", subs: "[no films on the ballot yet]" };
+  } else if (closed && winners.length === 1) {
+    screen = { film: winners[0], kicker: "The campus has picked", title: winners[0].name, subs: `— ${fmt(topCount)} of ${fmt(total)} votes.` };
+  } else if (closed && winners.length > 1) {
+    screen = { film: null, kicker: "It's a tie", title: winners.map((w) => w.name).join(" / "), subs: `— ${fmt(topCount)} votes each.` };
+  } else if (closed) {
+    screen = { film: null, kicker: "Intermission", title: "Voting closed", subs: "[the next ballot goes up soon]" };
+  } else if (mine) {
+    screen = { film: mine, kicker: "Your pick", title: mine.name, subs: "— You can switch until the ballot closes." };
+  } else {
+    screen = { film: null, kicker: "Now voting", title: "What plays next?", subs: session ? "[the hall is waiting on you]" : "[sign in to cast your vote]" };
+  }
 
-  const myPick = movies.find((m) => m.id === myVote);
+  // ----- the seating chart: 120 seats split by largest remainder -----
+  const split = chartSeen ? seatsPerFilm(films.map((m) => results?.counts[m.id] ?? 0)) : films.map(() => 0);
+  const seats: { color: string | null; you: boolean }[] = [];
+  films.forEach((m, i) => {
+    for (let j = 0; j < split[i]; j++) seats.push({ color: m.color, you: myVote === m.id && j === split[i] - 1 });
+  });
+  while (seats.length < SEATS) seats.push({ color: null, you: false });
+
+  const voterName = session ? session.name || session.email.split("@")[0] : "";
 
   return (
-    <>
-      <div className="rail left">
-        <div className="rail-holes" />
-      </div>
-      <div className="rail right">
-        <div className="rail-holes" />
-      </div>
-
-      <div ref={introRef}>
-        <div className="curtain-panel l" />
-        <div className="curtain-panel r" />
-        <div className="curtain-label">
-          <span>SILVER SCREEN CLUB</span>
-          <strong>NOW BOARDING</strong>
-        </div>
-      </div>
-
-      <header className="hero">
-        <div className="wrap">
-          <div className="bulbs">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div className="bulb" key={i} />
-            ))}
-          </div>
-          <p className="eyebrow">Silver Screen Club Presents</p>
-          <h1 className="title">
-            CAST YOUR
-            <em>VOTE</em>
-          </h1>
-          <p className="sub">
-            Three reels are in the can. One gets threaded through the projector next. You decide
-            which. <s className="rigged-note">The polls are totally not rigged.</s>
-          </p>
-
+    <div className="ssc">
+      <header className="nav">
+        <div className="s-wrap">
+          <a className="brand" href="/club" aria-label="About Silver Screen Club">
+            SSC
+          </a>
           {session ? (
-            <div className="auth-chip">
-              {session.image && (
-                // eslint-disable-next-line @next/next/no-img-element -- Google avatar needs no-referrer, which next/image can't set
-                <img src={session.image} alt="" referrerPolicy="no-referrer" width={22} height={22} />
-              )}
-              <span className="auth-email">{session.email}</span>
-              <button className="auth-signout" onClick={() => signOut()}>
-                sign out
+            <>
+              <span className="who">
+                {session.image && (
+                  // eslint-disable-next-line @next/next/no-img-element -- Google avatar needs no-referrer, which next/image can't set
+                  <img src={session.image} alt="" referrerPolicy="no-referrer" width={22} height={22} />
+                )}
+                <span>{session.name || session.email}</span>
+              </span>
+              <button className="btn ghost" type="button" onClick={() => signOut()}>
+                Sign out
               </button>
-            </div>
+            </>
           ) : (
-            <button className="signin-btn" onClick={() => signIn("google")}>
-              Sign in with Google to vote
+            <button className="btn ghost" type="button" onClick={() => signIn("google")}>
+              Sign in with Google
             </button>
           )}
-
-          {countdown && !countdown.expired && !closed && (
-            <p className="countdown">
-              <span className="countdown-label">Voting closes in</span>
-              <span className="countdown-value">{countdown.text}</span>
-            </p>
-          )}
-
-          {closed && <p className="poll-closed-banner">Voting is currently closed</p>}
-
-          {winners.length > 0 && results && (
-            <div className="winner-card" role="status">
-              <p className="winner-eyebrow">{winners.length > 1 ? "It's a tie" : "The club has spoken"}</p>
-              <div className="winner-body">
-                {winners.map((w) => (
-                  <div className="winner" key={w.id}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- posters can be admin-uploaded data: URIs */}
-                    <img src={w.posterUrl} alt={`${w.name} poster`} />
-                    <h2 className="winner-name">{w.name}</h2>
-                  </div>
-                ))}
-              </div>
-              <p className="winner-votes">
-                {winners.length > 1 ? `${topCount} votes each` : `${topCount} of ${results.total} votes`}
-              </p>
-            </div>
-          )}
-
-          <button className="scrollcue" onClick={scrollToBallot} aria-label="Scroll to ballot" />
-          <p className="scroll-label">Scroll</p>
         </div>
       </header>
 
       <main>
-        <div className="wrap wrap-wide">
-          <div className="section-head" ref={ballotRef}>
-            <p className="eyebrow">The Ballot</p>
-            <h2>{movies.length} Reels, One Screen</h2>
-            <p>
-              Tap a ticket to punch your vote. You can change it any time before the projector
-              rolls.
-            </p>
-          </div>
-
-          <div className="ballot">
-            {movies.map((movie, i) => (
-              <ReelCard
-                key={movie.id}
-                movie={movie}
-                index={i}
-                session={session}
-                isFresh={fresh === movie.id}
-                isMine={myVote === movie.id}
-                isPending={pending === movie.id}
-                disabled={closed || pending !== null}
-                onVote={() => castVote(movie.id)}
-              />
-            ))}
-            {movies.length === 0 && <p className="admin-empty">No movies on the ballot yet.</p>}
-          </div>
-
-          {error && <p className="vote-error">{error}</p>}
-
-          {myPick && (
-            <div className="your-pick">
-              <button className="change-link" onClick={scrollToBallot}>
-                change vote
-              </button>
-            </div>
-          )}
-
-          <section className="results">
-            <div className="section-head" style={{ paddingTop: 20 }}>
-              <p className="live-tag">
-                <span className="live-dot" />
-                Standings
+        <div className="hall">
+          <div className="s-wrap">
+            <div className="b-title">
+              <p className="k">
+                Silver Screen Club <span>presents</span>
               </p>
-              <h2>Where The Club Stands</h2>
-              <p>Live from the database, refreshed every 2 seconds.</p>
+              <h1>The Ballot</h1>
+              <p className="k">
+                <span>{films.length === 1 ? "one film" : `${numberWord(films.length)} films`}</span> one vote <span>one screen</span>
+              </p>
+              <p className="status">
+                <span className={closed ? "sign off" : "sign"}>
+                  <i />
+                  <span>{closed ? "Voting closed" : "Voting open"}</span>
+                </span>
+                <span className="closes">
+                  {countdown && !countdown.expired && !closed && (
+                    <>
+                      Closes in <b>{countdown.text}</b>
+                    </>
+                  )}
+                </span>
+              </p>
             </div>
-            <ol className="standings">
-              {movies.map((m) => {
-                const count = results?.counts[m.id] ?? 0;
-                const total = results?.total ?? 0;
-                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+
+            <div className="screen" style={{ "--glow": screen.film?.color ?? "#8d7f6a" } as Css} aria-live="polite">
+              <div className="layer slide" style={screen.film ? ({ "--c1": screen.film.color } as Css) : undefined}>
+                <div className={screen.film ? "feature" : "feature solo"}>
+                  {screen.film && <Poster src={screen.film.posterUrl} alt="" />}
+                  <div>
+                    <p className="sk">{screen.kicker}</p>
+                    <p className="st">{screen.title}</p>
+                  </div>
+                </div>
+                <p className="subs">{screen.subs}</p>
+              </div>
+              <div className="layer grain" />
+            </div>
+          </div>
+          <div className="seatrow" aria-hidden="true" />
+          <div className="floor" />
+        </div>
+
+        <section id="ballot" ref={ballotRef}>
+          <div className="s-wrap">
+            <span className="sign off">
+              <span>The ballot</span>
+            </span>
+            <h2>
+              {films.length === 1 ? "One film." : `${capital(numberWord(films.length))} films.`} <span className="hl">One vote.</span>
+            </h2>
+            <p className="lead">Pick the one you want on the big screen. You can switch your vote any time before the ballot closes.</p>
+
+            <ol className="cases rv">
+              {films.map((m, i) => {
+                const isMine = myVote === m.id;
+                const won = winners.length > 0 && winners.some((w) => w.id === m.id);
+                const dim = (!closed && myVote !== null && !isMine) || (closed && winners.length > 0 && !won);
+                const label = closed
+                  ? won
+                    ? "Winner"
+                    : "Voting closed"
+                  : pending === m.id
+                    ? "Saving your vote…"
+                    : isMine
+                      ? "Your vote ✓  View ticket"
+                      : !session
+                        ? "Sign in to vote"
+                        : myVote
+                          ? "Switch to this"
+                          : "Vote for this";
                 return (
-                  <li key={m.id} className="standing" data-mine={myVote === m.id ? "true" : "false"}>
-                    <div className="standing-head">
-                      <span className="standing-name">{m.name}</span>
-                      <span className="standing-count">
-                        {count} {count === 1 ? "vote" : "votes"} · {pct}%
-                      </span>
+                  <li
+                    key={m.id}
+                    className={["case", isMine && !closed ? "mine" : "", won ? "won" : "", dim ? "dim" : ""].join(" ").trim()}
+                    style={{ "--c1": m.color } as Css}
+                  >
+                    <div className="glass" onPointerMove={tilt} onPointerLeave={untilt}>
+                      <span className="tag">{won ? (winners.length > 1 ? "Tied" : "Campus pick") : "Your pick"}</span>
+                      <Poster src={m.posterUrl} alt={`${m.name} poster`} />
                     </div>
-                    <div className="standing-track">
-                      <div className="standing-bar" style={{ width: `${pct}%` }} />
+                    <div className="info">
+                      <p className="no">Film {String(i + 1).padStart(2, "0")}</p>
+                      <h3>{m.name}</h3>
+                      <p className="m">
+                        {m.meta}
+                        {m.imdb && <> · IMDb {m.imdb}</>}
+                      </p>
+                      {m.note && <p className="cc">[{m.note}]</p>}
+                      {m.blurb && <p className="d">{m.blurb}</p>}
+                      <button
+                        className="btn solid"
+                        type="button"
+                        aria-pressed={isMine}
+                        disabled={(closed || (pending !== null && pending !== m.id)) && !(isMine && !closed)}
+                        onClick={() => castVote(m.id)}
+                      >
+                        {label}
+                      </button>
                     </div>
                   </li>
                 );
               })}
             </ol>
-            <p className="standing-total">
-              {results?.total ?? 0} votes cast
-              {results && <> · updated {new Date(results.at).toLocaleTimeString()}</>}
+            {films.length === 0 && <p className="hint">No films on the ballot yet. Check back soon.</p>}
+            {error && (
+              <p className="vote-err" role="alert">
+                {error}
+              </p>
+            )}
+            <p className="hint" aria-live="polite">
+              {closed
+                ? "This ballot is closed. The next films go up soon."
+                : mine
+                  ? `Your vote is in for ${mine.name}. Changed your mind? Pick another.`
+                  : ""}
             </p>
-          </section>
-        </div>
+          </div>
+        </section>
+
+        <section id="count">
+          <div className="s-wrap">
+            <span className={closed ? "sign off" : "sign"}>
+              <i />
+              <span>{closed ? "Final count" : "Live count"}</span>
+            </span>
+            <h2>
+              Where the campus <span className="hl">is sitting</span>
+            </h2>
+            <p className="lead">Every vote takes a seat. The hall fills up in each film&apos;s colour as the votes come in.</p>
+
+            {/* "in" is set here too: once chartSeen re-renders this element, React would otherwise drop the class the observer added. */}
+            <div className={chartSeen ? "chart rv in" : "chart rv"} ref={chartRef}>
+              <div className="house">
+                <div className="mini-screen" />
+                <p className="mini-label">Screen</p>
+                <div className="seatmap" role="img" aria-label="Seating chart showing each film's share of the vote">
+                  {seats.map((s, n) => {
+                    const c = Math.floor(n / ROWS);
+                    const r = n % ROWS;
+                    const x = ((c + 0.5) / COLS) * 2 - 1;
+                    return (
+                      <span
+                        key={n}
+                        className={["seat", s.color ? "on" : "", s.you ? "you" : ""].join(" ").trim()}
+                        style={
+                          {
+                            gridColumn: c < COLS / 2 ? c + 1 : c + 2,
+                            gridRow: r + 1,
+                            "--k": (1 - x * x).toFixed(3),
+                            "--delay": `${c * 28}ms`,
+                            ...(s.color ? { "--c": s.color } : {}),
+                          } as Css
+                        }
+                      />
+                    );
+                  })}
+                </div>
+                <p className="per">
+                  {total
+                    ? `Each seat is about ${Math.max(1, Math.round(total / SEATS))} votes${mine ? ". The ringed seat is yours." : ""}`
+                    : "No votes yet. Be the first."}
+                </p>
+              </div>
+              <div>
+                <ul className="tally">
+                  {films.map((m) => {
+                    const count = results?.counts[m.id] ?? 0;
+                    const pct = total > 0 ? (count / total) * 100 : 0;
+                    return (
+                      <li key={m.id} style={{ "--c": m.color } as Css}>
+                        <div className="row">
+                          <span className="dot" />
+                          <span className="name">{m.name}</span>
+                          <span className="pct">{Math.round(pct)}%</span>
+                        </div>
+                        <div className="bar">
+                          <i style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="v">
+                          {fmt(count)} {count === 1 ? "vote" : "votes"}
+                          {myVote === m.id && " · including yours"}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="total">
+                  <b>{fmt(total)}</b> votes cast
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <footer>
-        <p className="fmark">SSC</p>
-        <p className="fsub">Silver Screen Club · BITS Pilani, Goa Campus</p>
+      <footer className="b-foot">
+        <div className="s-wrap">
+          <p className="billing">
+            Silver Screen Club <small>presents</small> The Ballot <small>starring</small> The Whole Campus <small>voting by</small> You{" "}
+            <small>on location at</small> BITS Pilani, K K Birla Goa Campus
+          </p>
+          <a className="btn ghost" href="/club">
+            About the club
+          </a>
+        </div>
       </footer>
-    </>
-  );
-}
 
-function ReelCard({
-  movie,
-  index,
-  isMine,
-  isPending,
-  disabled,
-  session,
-  isFresh,
-  onVote,
-}: {
-  movie: MovieDTO;
-  index: number;
-  session: SessionSummary;
-  isFresh: boolean;
-  isMine: boolean;
-  isPending: boolean;
-  disabled: boolean;
-  onVote: () => void;
-}) {
-  return (
-    <article className="reel-card" data-film={movie.id}>
-      <p className="reel-no">Reel {String(index + 1).padStart(2, "0")}</p>
-      <div className="poster-frame">
-        {/* eslint-disable-next-line @next/next/no-img-element -- posters can be admin-uploaded data: URIs, which next/image can't optimize */}
-        <img src={movie.posterUrl} alt={`${movie.name} poster`} loading="lazy" />
-      </div>
-      <h3 className="film-title">{movie.name}</h3>
-      <p className="film-meta">{movie.meta}</p>
-      <p className="film-tagline">{movie.tagline}</p>
-      <div className="vote-row">
-        <button
-          className="vote-btn"
-          data-voted={isMine ? "true" : "false"}
-          aria-pressed={isMine}
-          disabled={disabled && !isMine}
-          onClick={onVote}
-        >
-          <span>{isPending ? "Punching…" : isMine ? "Your ticket" : "Punch this ticket"}</span>
-          <span className="stub-arrow">✂</span>
+      {mine && !closed && session && (
+        <button className={ticketOpen ? "chip" : "chip show"} type="button" onClick={() => setTicketOpen(true)} style={{ "--c": mine.color } as Css}>
+          <i />
+          <span>Your vote: {mine.name}</span>
+          <small>View ticket</small>
         </button>
-      </div>
-      {isMine && session && isPending && (
-        <div className="ticket-printing" role="status">
-          <span className="ticket-spinner" aria-hidden="true" />
-          Punching your ticket…
+      )}
+
+      {mine && session && (
+        <div
+          className={ticketOpen ? "tk-wrap show" : "tk-wrap"}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Your ticket"
+          aria-hidden={!ticketOpen}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setTicketOpen(false);
+          }}
+        >
+          <p>Your vote is in. Here is your ticket.</p>
+          <Ticket film={mine} name={voterName} email={session.email} voteNo={voteNo} />
+          <div className="tk-actions">
+            <button className="btn solid" type="button" ref={doneRef} onClick={() => setTicketOpen(false)} tabIndex={ticketOpen ? 0 : -1}>
+              Done
+            </button>
+            <button
+              className="btn ghost"
+              type="button"
+              tabIndex={ticketOpen ? 0 : -1}
+              onClick={() => {
+                setTicketOpen(false);
+                scrollToBallot();
+              }}
+            >
+              Change my vote
+            </button>
+          </div>
         </div>
       )}
-      {isMine && session && !isPending && (
-        <YourTicket movieName={movie.name} session={session} fresh={isFresh} />
-      )}
-    </article>
+    </div>
   );
 }
 
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // Reading a browser-only media query can't happen during SSR/first paint,
-    // so this one-time sync after mount is intentional, not a missed derivation.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setReduced(mql.matches);
-    const onChange = () => setReduced(mql.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
+function Poster({ src, alt }: { src: string; alt: string }) {
+  return (
+    <span className="poster">
+      {/* eslint-disable-next-line @next/next/no-img-element -- posters can be admin-uploaded data: URIs, which next/image can't optimize */}
+      <img src={src} alt={alt} loading="lazy" />
+    </span>
+  );
 }
 
-function formatCountdown(msLeft: number): string {
-  const totalSeconds = Math.max(0, Math.floor(msLeft / 1000));
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const parts: string[] = [];
-  if (days) parts.push(`${days}d`);
-  if (days || hours) parts.push(`${hours}h`);
-  if (days || hours || minutes) parts.push(`${minutes}m`);
-  parts.push(`${seconds}s`);
-  return parts.join(" ");
+function Ticket({
+  film,
+  name,
+  email,
+  voteNo,
+}: {
+  film: { id: string; name: string; posterUrl: string; color: string };
+  name: string;
+  email: string;
+  voteNo: number | null;
+}) {
+  const h = hash(`${email}|${film.id}`);
+  return (
+    <div className="tk" style={{ "--c": film.color } as Css}>
+      <div className="tk-paper">
+        <div className="tk-main">
+          <Poster src={film.posterUrl} alt="" />
+          <div>
+            <div className="tk-top">
+              <span>Silver Screen Club</span>
+              <span>BITS Goa</span>
+            </div>
+            <div className="tk-film">{film.name}</div>
+            <dl className="tk-fields">
+              <div>
+                <dt>Name</dt>
+                <dd>{name}</dd>
+              </div>
+              <div>
+                <dt>Venue</dt>
+                <dd>The Auditorium</dd>
+              </div>
+              <div>
+                <dt>Seat</dt>
+                <dd>
+                  Row {"ABCDEFGHJK".charAt(h % 10)} · {((h >>> 8) % 24) + 1}
+                </dd>
+              </div>
+              <div>
+                <dt>Time</dt>
+                <dd>8:00 pm</dd>
+              </div>
+            </dl>
+            <p className="tk-note">Valid only if this film wins the ballot. A souvenir of your vote, not an entry pass.</p>
+          </div>
+        </div>
+        <div className="tk-stub">
+          <span className="tk-admit">Admit one</span>
+          {voteNo !== null && <span className="tk-no">Vote no. {fmt(voteNo)}</span>}
+          <Barcode seed={`${email}|${film.name}`} />
+          <span className="tk-code">SSC-{("000000" + h.toString(36).toUpperCase()).slice(-6)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Decorative only: bars derived from the seed so each ticket looks different but stays stable.
+function Barcode({ seed }: { seed: string }) {
+  let h = hash(seed);
+  const bars: { x: number; w: number }[] = [];
+  let x = 0;
+  while (x < 190) {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+    const w = 1 + (h % 3);
+    if ((h >>> 8) % 4 !== 0) bars.push({ x, w });
+    x += w + 1 + ((h >>> 12) % 2);
+  }
+  return (
+    <svg className="tk-bars" viewBox="0 0 190 40" preserveAspectRatio="none" aria-hidden="true">
+      {bars.map((b) => (
+        <rect key={b.x} x={b.x} y={0} width={b.w} height={40} />
+      ))}
+    </svg>
+  );
+}
+
+// Posters lean toward the pointer (mouse only; ignored for touch and reduced motion).
+function tilt(e: ReactPointerEvent<HTMLDivElement>) {
+  if (e.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  el.style.setProperty("--ry", `${(((e.clientX - r.left) / r.width - 0.5) * 14).toFixed(1)}deg`);
+  el.style.setProperty("--rx", `${((0.5 - (e.clientY - r.top) / r.height) * 10).toFixed(1)}deg`);
+}
+function untilt(e: ReactPointerEvent<HTMLDivElement>) {
+  e.currentTarget.style.removeProperty("--rx");
+  e.currentTarget.style.removeProperty("--ry");
+}
+
+function hash(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619) >>> 0;
+  return h >>> 0;
+}
+
+function fmt(n: number): string {
+  return n.toLocaleString("en-IN");
+}
+
+function numberWord(n: number): string {
+  return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][n] ?? String(n);
+}
+function capital(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Taglines on the live ballot read like "[English subtitles will be available] Imdb: 8.2/10 A science teacher…".
+// Pull the subtitle note and rating out so they can be shown on their own lines; anything else stays as the blurb.
+function parseTagline(tagline: string): { note: string | null; imdb: string | null; blurb: string } {
+  let rest = tagline.trim();
+  let note: string | null = null;
+  let imdb: string | null = null;
+  const noteMatch = rest.match(/^\[([^\]]+)\]\s*/);
+  if (noteMatch) {
+    note = noteMatch[1].trim();
+    rest = rest.slice(noteMatch[0].length);
+  }
+  const imdbMatch = rest.match(/imdb\s*:?\s*([\d.]+)\s*(?:\/\s*10)?/i);
+  if (imdbMatch) {
+    imdb = imdbMatch[1];
+    rest = (rest.slice(0, imdbMatch.index) + rest.slice((imdbMatch.index ?? 0) + imdbMatch[0].length)).trim();
+  }
+  return { note, imdb, blurb: rest };
+}
+
+function seatsPerFilm(counts: number[]): number[] {
+  const t = counts.reduce((a, b) => a + b, 0);
+  if (!t) return counts.map(() => 0);
+  const raw = counts.map((c) => (c / t) * SEATS);
+  const out = raw.map(Math.floor);
+  const left = SEATS - out.reduce((a, b) => a + b, 0);
+  raw
+    .map((v, i) => [v - out[i], i] as const)
+    .sort((a, b) => b[0] - a[0])
+    .slice(0, left)
+    .forEach(([, i]) => out[i]++);
+  return out;
+}
+
+// Reads a vivid accent colour off each poster so the glow matches the film.
+function usePosterColors(movies: MovieDTO[]): Record<string, string> {
+  const [colors, setColors] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    for (const m of movies) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (cancelled) return;
+        const c = dominantColor(img);
+        if (c) setColors((prev) => (prev[m.id] === c ? prev : { ...prev, [m.id]: c }));
+      };
+      img.src = m.posterUrl;
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [movies]);
+  return colors;
+}
+
+function dominantColor(img: HTMLImageElement): string | null {
+  try {
+    const w = 24;
+    const h = 36;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, w, h);
+    const px = ctx.getImageData(0, 0, w, h).data;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let weight = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      const max = Math.max(px[i], px[i + 1], px[i + 2]);
+      const min = Math.min(px[i], px[i + 1], px[i + 2]);
+      const wt = (max - min) / 255; // favour saturated pixels over greys
+      r += px[i] * wt;
+      g += px[i + 1] * wt;
+      b += px[i + 2] * wt;
+      weight += wt;
+    }
+    if (weight < 1) return null;
+    const [hue, sat] = rgbToHsl(r / weight, g / weight, b / weight);
+    return `hsl(${Math.round(hue)} ${Math.round(Math.max(sat, 0.62) * 100)}% 56%)`;
+  } catch {
+    return null; // a cross-origin poster taints the canvas; keep the palette colour
+  }
+}
+
+function rgbToHsl(r: number, g: number, b: number): [number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  if (!d) return [0, 0];
+  const l = (max + min) / 2;
+  const s = d / (1 - Math.abs(2 * l - 1));
+  let h: number;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, Math.min(1, s)];
 }
 
 function useCountdown(closesAtIso: string | null): { text: string; expired: boolean } | null {
@@ -381,7 +711,7 @@ function useCountdown(closesAtIso: string | null): { text: string; expired: bool
 
   useEffect(() => {
     if (!closesAtIso) return;
-    // Same rationale as useReducedMotion: current time is only meaningful client-side.
+    // Current time is only meaningful client-side, so this sync after mount is intentional.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -394,154 +724,10 @@ function useCountdown(closesAtIso: string | null): { text: string; expired: bool
   return { text: formatCountdown(diff), expired: false };
 }
 
-function useIntroAnimation(ref: React.RefObject<HTMLDivElement | null>, reduced: boolean) {
-  useEffect(() => {
-    let ctx: { revert: () => void } | undefined;
-    let cancelled = false;
-
-    async function run() {
-      const gsapModule = await import("gsap");
-      const ScrollTriggerModule = await import("gsap/ScrollTrigger");
-      const gsap = gsapModule.gsap;
-      const ScrollTrigger = ScrollTriggerModule.ScrollTrigger;
-      if (cancelled) return;
-
-      gsap.registerPlugin(ScrollTrigger);
-
-      ctx = gsap.context(() => {
-        const tl = gsap.timeline({ defaults: { ease: "power3.inOut" } });
-        tl.to(".curtain-label", { opacity: 0, duration: 0.5, delay: reduced ? 0 : 0.9 })
-          .to(".curtain-panel.l", { xPercent: -100, duration: reduced ? 0.01 : 1.1 }, reduced ? 0 : "<")
-          .to(".curtain-panel.r", { xPercent: 100, duration: reduced ? 0.01 : 1.1 }, "<")
-          .set(".curtain-panel.l, .curtain-panel.r, .curtain-label", { display: "none" })
-          .from(".bulbs .bulb", { opacity: 0.15, stagger: 0.06, duration: 0.4 }, "-=0.6")
-          .from(".eyebrow", { y: 14, opacity: 0, duration: 0.5 }, "-=0.3")
-          .from(".title", { y: 24, opacity: 0, duration: 0.6 }, "-=0.35")
-          .from(".sub", { y: 14, opacity: 0, duration: 0.5 }, "-=0.35");
-
-        if (!reduced) {
-          gsap.to(".bulbs .bulb", {
-            boxShadow: "0 0 10px 2px rgba(232,179,65,.85)",
-            backgroundColor: "#e8b341",
-            stagger: { each: 0.15, repeat: -1, yoyo: true },
-            duration: 0.9,
-            repeat: -1,
-            yoyo: true,
-            delay: 1.6,
-          });
-          gsap.to(".scrollcue", { y: 8, opacity: 0.5, duration: 0.9, repeat: -1, yoyo: true, ease: "power1.inOut" });
-
-          gsap.to(".rail.left .rail-holes", {
-            y: -260,
-            ease: "none",
-            scrollTrigger: { trigger: document.body, start: "top top", end: "bottom bottom", scrub: 0.6 },
-          });
-          gsap.to(".rail.right .rail-holes", {
-            y: -180,
-            ease: "none",
-            scrollTrigger: { trigger: document.body, start: "top top", end: "bottom bottom", scrub: 0.4 },
-          });
-
-          gsap.utils.toArray<HTMLElement>(".reel-card").forEach((card, i) => {
-            gsap.from(card, {
-              y: 70,
-              opacity: 0,
-              rotate: i % 2 === 0 ? -2.2 : 2.2,
-              duration: 1,
-              ease: "power3.out",
-              scrollTrigger: { trigger: card, start: "top 85%" },
-            });
-            const poster = card.querySelector(".poster-frame");
-            if (poster) {
-              gsap.to(poster, {
-                y: -22,
-                ease: "none",
-                scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: true },
-              });
-            }
-          });
-
-          gsap.from("footer .fmark, footer .fsub", {
-            y: 16,
-            opacity: 0,
-            duration: 0.7,
-            stagger: 0.1,
-            scrollTrigger: { trigger: "footer", start: "top 90%" },
-          });
-        } else {
-          gsap.set(".reel-card, footer .fmark, footer .fsub", { opacity: 1, y: 0 });
-        }
-      });
-    }
-
-    run();
-
-    return () => {
-      cancelled = true;
-      ctx?.revert();
-    };
-  }, [reduced]);
-}
-
-function YourTicket({
-  movieName,
-  session,
-  fresh,
-}: {
-  movieName: string;
-  session: NonNullable<SessionSummary>;
-  fresh: boolean;
-}) {
-  return (
-    <div className={fresh ? "your-ticket fresh" : "your-ticket"} aria-label="Your ticket">
-      {fresh && (
-        <p className="ticket-confirmed" role="status">
-          ✓ Vote recorded
-        </p>
-      )}
-      <div className="ticket-main">
-        <p className="ticket-eyebrow">Admit one</p>
-        <h3 className="ticket-movie">{movieName}</h3>
-        <dl className="ticket-fields">
-          <div>
-            <dt>Name</dt>
-            <dd>{session.name || session.email.split("@")[0]}</dd>
-          </div>
-          <div>
-            <dt>Venue</dt>
-            <dd>The Auditorium</dd>
-          </div>
-          <div>
-            <dt>Time</dt>
-            <dd>8:00 pm</dd>
-          </div>
-        </dl>
-        <Barcode seed={`${session.email}|${movieName}`} />
-      </div>
-      <div className="ticket-stub" aria-hidden="true">
-        <span>Silver Screen Club</span>
-      </div>
-    </div>
-  );
-}
-
-// Decorative only: bars derived from the seed so each ticket looks different but stays stable.
-function Barcode({ seed }: { seed: string }) {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
-  const bars: { x: number; w: number }[] = [];
-  let x = 0;
-  while (x < 190) {
-    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
-    const w = 1 + (h % 3);
-    if ((h >>> 8) % 4 !== 0) bars.push({ x, w });
-    x += w + 1 + ((h >>> 12) % 2);
-  }
-  return (
-    <svg className="ticket-barcode" viewBox="0 0 190 40" preserveAspectRatio="none" aria-hidden="true">
-      {bars.map((b) => (
-        <rect key={b.x} x={b.x} y={0} width={b.w} height={40} />
-      ))}
-    </svg>
-  );
+function formatCountdown(msLeft: number): string {
+  const totalSeconds = Math.max(0, Math.floor(msLeft / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const p = (n: number) => String(n).padStart(2, "0");
+  const hms = `${p(Math.floor((totalSeconds % 86400) / 3600))}h ${p(Math.floor((totalSeconds % 3600) / 60))}m ${p(totalSeconds % 60)}s`;
+  return days ? `${days}d ${hms}` : hms;
 }
