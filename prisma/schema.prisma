@@ -22,6 +22,7 @@ model User {
   votes           Vote[]
   recommendations Recommendation[]
   applications    Application[]
+  reviews         Review[]
 
   createdAt DateTime @default(now())
 }
@@ -252,4 +253,40 @@ model Application {
   @@unique([cycleId, userId])
   @@unique([cycleId, bitsId])
   @@index([cycleId, status])
+}
+
+// --- Film diary: ratings and reviews of films the club has screened ---
+// Letterboxd-style: one rating (and optional written review) per person per film.
+
+model Film {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  year        Int?
+  meta        String    @default("")
+  posterUrl   String    @db.Text
+  screenedOn  DateTime?
+  // Only films with this on take new ratings; existing reviews stay visible either way.
+  reviewsOpen Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  reviews Review[]
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  filmId    String
+  userId    String
+  // Half-stars: 1 = ½★ … 10 = ★★★★★
+  rating    Int
+  body      String   @default("") @db.Text
+  spoiler   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  film Film @relation(fields: [filmId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, filmId])
+  @@index([filmId, createdAt])
 }

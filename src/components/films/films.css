@@ -1,0 +1,444 @@
+/* Film diary: rating + review pages. Builds on the tokens and buttons in ballot.css (.ssc). */
+
+.ssc.diary {
+  padding-bottom: var(--safe-b);
+}
+.ssc .dnav {
+  display: flex;
+  gap: 18px;
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 15px;
+}
+.ssc .dnav a {
+  color: var(--mute);
+  text-decoration: none;
+}
+.ssc .dnav a:hover,
+.ssc .dnav a[aria-current="page"] {
+  color: var(--ink);
+}
+
+/* stars: a grey row with a gold row clipped on top; --v is half-stars (0–10) */
+.ssc .stars {
+  position: relative;
+  display: inline-block;
+  /* stay as wide as the five glyphs even inside grid/flex rows, or the gold layer's % width is off */
+  width: max-content;
+  justify-self: start;
+  flex: none;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #34312c;
+  white-space: nowrap;
+  font-family: system-ui, "Segoe UI Symbol", sans-serif;
+}
+.ssc .stars-on {
+  position: absolute;
+  inset: 0 auto 0 0;
+  overflow: hidden;
+  width: calc(var(--v, 0) * 10%);
+  color: var(--sub);
+  text-shadow: 0 0 12px rgba(255, 216, 74, 0.35);
+}
+.ssc .star-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+.ssc .stars-input {
+  font-size: clamp(2.2rem, 9vw, 2.8rem);
+  cursor: pointer;
+  touch-action: none;
+  border-radius: 4px;
+}
+.ssc .stars-input.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.ssc .star-input-label {
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 15px;
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+  min-width: 6.5em;
+}
+
+/* hero */
+.ssc .film-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(96px, 14vh, 140px) 0 clamp(40px, 6vw, 72px);
+  border-bottom: 1px solid var(--line);
+}
+.ssc .backdrop {
+  position: absolute;
+  inset: -10%;
+  background: var(--poster) center / cover no-repeat;
+  filter: blur(40px) brightness(0.32) saturate(1.3);
+  transform: scale(1.1);
+}
+.ssc .backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 40%, var(--room));
+}
+.ssc .hero-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 64px);
+  align-items: center;
+}
+.ssc .hero-poster {
+  --c1: #c86a3a;
+}
+.ssc .hero-copy h1 {
+  font-family: var(--poster-type);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(2.6rem, 7vw, 5rem);
+  line-height: 0.92;
+  margin-top: 16px;
+  text-wrap: balance;
+}
+.ssc .hero-meta {
+  margin-top: 10px;
+  color: var(--mute);
+  font-size: 16px;
+}
+.ssc .score {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 26px;
+}
+.ssc .score-num {
+  display: flex;
+  white-space: nowrap;
+  flex: none;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--poster-type);
+}
+.ssc .score-num b {
+  font-size: clamp(3.4rem, 9vw, 4.6rem);
+  font-weight: 700;
+  line-height: 0.85;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ssc .score-num span {
+  font-size: 1.4rem;
+  color: var(--mute);
+}
+.ssc .score-sub {
+  margin-top: 6px;
+  font-size: 15px;
+  color: var(--mute);
+}
+.ssc .histo {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  max-width: 420px;
+}
+.ssc .histo-end {
+  font-size: 12px;
+  color: var(--mute);
+  white-space: nowrap;
+  padding-bottom: 2px;
+  font-family: system-ui, "Segoe UI Symbol", sans-serif;
+}
+.ssc .histo-bars {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 3px;
+  align-items: end;
+  height: 56px;
+}
+.ssc .histo-bars i {
+  display: block;
+  background: color-mix(in srgb, var(--sub) 70%, #3a3226);
+  border-radius: 2px 2px 0 0;
+  min-height: 3px;
+  transition: height 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ssc .histo-bars i.zero {
+  background: #24221e;
+}
+
+/* cards */
+.ssc .card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: clamp(18px, 3vw, 28px);
+}
+.ssc .yours {
+  margin-top: clamp(28px, 5vw, 48px);
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+.ssc .yours-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.ssc .yours-title {
+  font-family: var(--poster-type);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.ssc .muted {
+  color: var(--mute);
+}
+.ssc .small {
+  font-size: 14px;
+}
+.ssc .saved {
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 14px;
+  color: var(--sub);
+}
+.ssc .field {
+  position: relative;
+  width: 100%;
+}
+.ssc .field textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 14px 16px 28px;
+  border-radius: 4px;
+  border: 1px solid #34312c;
+  background: #09090b;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.ssc .field textarea:focus {
+  outline: none;
+  border-color: var(--sub);
+}
+.ssc .count {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  font-size: 12px;
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+.ssc .check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mute);
+  font-size: 15px;
+  cursor: pointer;
+}
+.ssc .check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--sub);
+}
+.ssc .yours-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ssc .btn.danger:hover {
+  border-color: #ff8a7a;
+  color: #ff8a7a;
+}
+.ssc .err {
+  color: #ff8a7a;
+  font-size: 15px;
+}
+.ssc .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* review list */
+.ssc .reviews {
+  padding-top: clamp(48px, 7vw, 88px);
+}
+.ssc .reviews-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ssc .reviews-head h2 {
+  font-size: clamp(2rem, 5.4vw, 3.6rem);
+}
+.ssc .sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 14px;
+  color: var(--mute);
+}
+.ssc .sort select {
+  background: #09090b;
+  color: var(--ink);
+  border: 1px solid #34312c;
+  border-radius: 3px;
+  padding: 6px 10px;
+  font: inherit;
+  letter-spacing: 0.08em;
+}
+.ssc .rlist {
+  list-style: none;
+  margin-top: 26px;
+  display: grid;
+  gap: 14px;
+}
+.ssc .rcard {
+  display: grid;
+  gap: 10px;
+}
+.ssc .rhead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ssc .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex: none;
+  object-fit: cover;
+}
+.ssc .avatar.ph {
+  display: grid;
+  place-items: center;
+  background: #23211d;
+  color: var(--ink);
+  font-family: var(--poster-type);
+  font-weight: 600;
+  font-size: 17px;
+  text-transform: uppercase;
+}
+.ssc .rname {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.2;
+}
+.ssc .rdate {
+  font-size: 13px;
+  color: var(--mute);
+}
+.ssc .rbody {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  color: #d9d3c8;
+  font-size: 17px;
+}
+.ssc .rbody.hidden {
+  color: var(--mute);
+  font-style: italic;
+}
+.ssc .reveal {
+  color: var(--sub);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-style: normal;
+  font-size: inherit;
+}
+.ssc .empty {
+  margin-top: 22px;
+  color: var(--mute);
+}
+
+/* index */
+.ssc .index {
+  padding-top: clamp(96px, 14vh, 140px);
+  min-height: 80vh;
+}
+.ssc .fgrid {
+  list-style: none;
+  margin-top: clamp(32px, 5vw, 56px);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 42vw), 1fr));
+  gap: clamp(18px, 3vw, 36px);
+}
+.ssc .fcard {
+  display: grid;
+  gap: 10px;
+  text-decoration: none;
+  --c1: #c86a3a;
+}
+.ssc .fcard .glass {
+  display: block;
+  padding: 6px;
+}
+.ssc .fcard:hover .glass {
+  transform: translateY(-6px);
+}
+.ssc .ftitle {
+  font-family: var(--poster-type);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 1.3rem;
+  line-height: 1.05;
+}
+.ssc .fstats {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--mute);
+}
+
+@media (max-width: 700px) {
+  .ssc .dnav a:first-child {
+    display: none;
+  }
+  .ssc .hero-grid {
+    grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+  }
+  .ssc .hero-poster {
+    padding: 5px;
+  }
+  .ssc .hero-copy h1 {
+    font-size: clamp(2rem, 9vw, 2.6rem);
+  }
+  .ssc .hero-copy .sign {
+    display: none;
+  }
+  .ssc .hero-copy h1 {
+    margin-top: 0;
+  }
+  .ssc .score,
+  .ssc .histo {
+    grid-column: 1 / -1;
+  }
+}
