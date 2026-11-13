@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, signOut } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import type { FilmStats, FilmSummary, ReviewDTO } from "@/lib/films";
 import { REVIEW_MAX_CHARS } from "@/lib/filmRules";
-import { deleteReview, saveReview } from "@/app/films/actions";
+import { deleteReview, saveReview } from "@/app/diary/actions";
 import { StarInput, Stars, starLabel } from "./Stars";
-import "@/components/ballot.css";
-import "./films.css";
+import { ReviewBody, ReviewItem } from "./ReviewItem";
 
 type Css = CSSProperties & Record<`--${string}`, string | number>;
-type SessionSummary = { name: string | null; image: string | null } | null;
+type Me = { handle: string } | null;
 type Sort = "new" | "high" | "low";
 
 export default function FilmDiary({
@@ -21,141 +20,119 @@ export default function FilmDiary({
   stats,
   reviews,
   mine,
-  session,
+  me,
+  base,
 }: {
   film: FilmSummary;
   stats: FilmStats;
   reviews: ReviewDTO[];
   mine: ReviewDTO | null;
-  session: SessionSummary;
+  me: Me;
+  base: string;
 }) {
   const [sort, setSort] = useState<Sort>("new");
-  const sorted = useMemo(() => {
+  const others = useMemo(() => {
     const list = reviews.filter((r) => !r.mine);
     if (sort === "high") return [...list].sort((a, b) => b.rating - a.rating);
     if (sort === "low") return [...list].sort((a, b) => a.rating - b.rating);
     return list;
   }, [reviews, sort]);
   const written = reviews.filter((r) => r.body).length;
-  const peak = Math.max(1, ...stats.histogram);
 
   return (
-    <div className="ssc diary" style={{ "--poster": `url("${film.posterUrl}")` } as Css}>
-      <header className="nav">
-        <div className="s-wrap">
-          <a className="brand" href="/">
-            SSC
-          </a>
-          <nav className="dnav" aria-label="Site">
-            <Link href="/films">Film diary</Link>
-            <Link href="/vote">Vote</Link>
-          </nav>
-          {session ? (
-            <button className="btn ghost" type="button" onClick={() => signOut()}>
-              Sign out
-            </button>
-          ) : (
-            <button className="btn ghost" type="button" onClick={() => signIn("google")}>
-              Sign in
-            </button>
+    <main style={{ "--poster": `url("${film.posterUrl}")` } as Css}>
+      {/* the film, with its poster blurred behind it like a lobby lightbox */}
+      <section className="film-hero">
+        <div className="backdrop" aria-hidden="true" />
+        <div className="s-wrap hero-grid">
+          <div className="glass hero-poster">
+            <span className="poster">
+              {/* eslint-disable-next-line @next/next/no-img-element -- posters may be data: URIs */}
+              <img src={film.posterUrl} alt={`${film.title} poster`} />
+            </span>
+          </div>
+          <div className="hero-copy">
+            <span className="sign off">
+              <span>Screened by SSC</span>
+            </span>
+            <h1>{film.title}</h1>
+            <p className="hero-meta">{[film.meta, film.year].filter(Boolean).join(" · ")}</p>
+            <Score stats={stats} written={written} />
+            <Histogram stats={stats} />
+          </div>
+        </div>
+      </section>
+
+      <section className="s-wrap">
+        <YourReview film={film} mine={mine} me={me} base={base} />
+      </section>
+
+      <section className="s-wrap reviews">
+        <div className="reviews-head">
+          <h2>
+            What the campus <span className="hl">thought</span>
+          </h2>
+          {others.length > 1 && (
+            <label className="sort">
+              <span>Sort</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+                <option value="new">Newest</option>
+                <option value="high">Highest rated</option>
+                <option value="low">Lowest rated</option>
+              </select>
+            </label>
           )}
         </div>
-      </header>
+        {others.length === 0 ? (
+          <p className="empty">{mine ? "Yours is the only one so far. Tell your friends." : "No reviews yet. Be the first to log it."}</p>
+        ) : (
+          <ol className="rlist">
+            {others.map((r) => (
+              <ReviewItem key={r.id} review={r} base={base} show="author" />
+            ))}
+          </ol>
+        )}
+      </section>
+    </main>
+  );
+}
 
-      <main>
-        {/* the film, with its poster blurred behind it like a lobby lightbox */}
-        <section className="film-hero">
-          <div className="backdrop" aria-hidden="true" />
-          <div className="s-wrap hero-grid">
-            <div className="glass hero-poster">
-              <span className="poster">
-                {/* eslint-disable-next-line @next/next/no-img-element -- posters may be data: URIs */}
-                <img src={film.posterUrl} alt={`${film.title} poster`} />
-              </span>
-            </div>
-            <div className="hero-copy">
-              <span className="sign off">
-                <span>Film diary</span>
-              </span>
-              <h1>{film.title}</h1>
-              <p className="hero-meta">
-                {[film.meta, film.year].filter(Boolean).join(" · ")}
-                {" · "}Screened by Silver Screen Club
-              </p>
-
-              <div className="score">
-                <div className="score-num">
-                  <b>{stats.average !== null ? stats.average.toFixed(1) : "–"}</b>
-                  <span>/ 5</span>
-                </div>
-                <div>
-                  <Stars value={(stats.average ?? 0) * 2} size="1.6rem" label={stats.average !== null ? `Average ${stats.average} out of 5 stars` : "No ratings yet"} />
-                  <p className="score-sub">
-                    {stats.count ? `${stats.count} ${stats.count === 1 ? "rating" : "ratings"} · ${written} ${written === 1 ? "review" : "reviews"}` : "No ratings yet"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="histo" role="img" aria-label={histogramLabel(stats)}>
-                <span className="histo-end">½★</span>
-                <div className="histo-bars">
-                  {stats.histogram.map((n, i) => (
-                    <i key={i} style={{ height: `${Math.max(4, (n / peak) * 100)}%` }} className={n ? "" : "zero"} title={`${starLabel(i + 1)}★ · ${n}`} />
-                  ))}
-                </div>
-                <span className="histo-end">★★★★★</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="s-wrap">
-          <YourReview film={film} mine={mine} session={session} />
-        </section>
-
-        <section className="s-wrap reviews">
-          <div className="reviews-head">
-            <h2>
-              What the campus <span className="hl">thought</span>
-            </h2>
-            {sorted.length > 1 && (
-              <label className="sort">
-                <span>Sort</span>
-                <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-                  <option value="new">Newest</option>
-                  <option value="high">Highest rated</option>
-                  <option value="low">Lowest rated</option>
-                </select>
-              </label>
-            )}
-          </div>
-          {sorted.length === 0 ? (
-            <p className="empty">{mine ? "Yours is the only one so far. Tell your friends." : "No reviews yet. Be the first to log it."}</p>
-          ) : (
-            <ol className="rlist">
-              {sorted.map((r) => (
-                <ReviewCard key={r.id} review={r} />
-              ))}
-            </ol>
-          )}
-        </section>
-      </main>
-
-      <footer className="b-foot">
-        <div className="s-wrap">
-          <p className="billing">
-            Silver Screen Club <small>presents</small> The Film Diary <small>written by</small> The Whole Campus
-          </p>
-          <Link className="btn ghost" href="/films">
-            All films
-          </Link>
-        </div>
-      </footer>
+export function Score({ stats, written }: { stats: FilmStats; written?: number }) {
+  return (
+    <div className="score">
+      <div className="score-num">
+        <b>{stats.average !== null ? stats.average.toFixed(1) : "–"}</b>
+        <span>/ 5</span>
+      </div>
+      <div>
+        <Stars value={(stats.average ?? 0) * 2} size="1.6rem" label={stats.average !== null ? `Average ${stats.average} out of 5 stars` : "No ratings yet"} />
+        <p className="score-sub">
+          {stats.count
+            ? `${stats.count} ${stats.count === 1 ? "rating" : "ratings"}${written !== undefined ? ` · ${written} ${written === 1 ? "review" : "reviews"}` : ""}`
+            : "No ratings yet"}
+        </p>
+      </div>
     </div>
   );
 }
 
-function YourReview({ film, mine, session }: { film: FilmSummary; mine: ReviewDTO | null; session: SessionSummary }) {
+export function Histogram({ stats }: { stats: FilmStats }) {
+  const peak = Math.max(1, ...stats.histogram);
+  const label = stats.count ? stats.histogram.map((n, i) => `${starLabel(i + 1)} stars: ${n}`).join(", ") : "No ratings yet";
+  return (
+    <div className="histo" role="img" aria-label={label}>
+      <span className="histo-end">½★</span>
+      <div className="histo-bars">
+        {stats.histogram.map((n, i) => (
+          <i key={i} style={{ height: `${Math.max(4, (n / peak) * 100)}%` }} className={n ? "" : "zero"} title={`${starLabel(i + 1)}★ · ${n}`} />
+        ))}
+      </div>
+      <span className="histo-end">★★★★★</span>
+    </div>
+  );
+}
+
+function YourReview({ film, mine, me, base }: { film: FilmSummary; mine: ReviewDTO | null; me: Me; base: string }) {
   const router = useRouter();
   const [editing, setEditing] = useState(!mine);
   const [rating, setRating] = useState(mine?.rating ?? 0);
@@ -165,11 +142,11 @@ function YourReview({ film, mine, session }: { film: FilmSummary; mine: ReviewDT
   const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
 
-  if (!session) {
+  if (!me) {
     return (
       <div className="card yours">
         <p className="yours-title">Seen it?</p>
-        <p className="muted">Sign in with your BITS Google account to rate {film.title} and write a review.</p>
+        <p className="muted">Sign in with your BITS Google account to rate {film.title}, write a review and get your own diary profile.</p>
         <button className="btn solid" type="button" onClick={() => signIn("google")}>
           Sign in to rate
         </button>
@@ -182,7 +159,13 @@ function YourReview({ film, mine, session }: { film: FilmSummary; mine: ReviewDT
       <div className="card yours">
         <div className="yours-row">
           <p className="yours-title">Your review</p>
-          {saved && <span className="saved">Saved ✓</span>}
+          {saved ? (
+            <span className="saved">Saved ✓</span>
+          ) : (
+            <Link className="muted small" href={`${base}/${me.handle}`}>
+              on your profile →
+            </Link>
+          )}
         </div>
         <ReviewBody review={mine} open />
         <div className="yours-actions">
@@ -228,7 +211,7 @@ function YourReview({ film, mine, session }: { film: FilmSummary; mine: ReviewDT
     return (
       <div className="card yours">
         <p className="yours-title">Reviews are closed</p>
-        <p className="muted">The diary for this film isn&apos;t taking new ratings right now.</p>
+        <p className="muted">This film isn&apos;t taking new ratings right now.</p>
       </div>
     );
   }
@@ -257,7 +240,7 @@ function YourReview({ film, mine, session }: { film: FilmSummary; mine: ReviewDT
     >
       <div className="yours-row">
         <p className="yours-title">{mine ? "Edit your review" : "Log this film"}</p>
-        {session.name && <span className="muted small">as {session.name}</span>}
+        <span className="muted small">as @{me.handle}</span>
       </div>
       <StarInput value={rating} onChange={setRating} disabled={pending} />
       <label className="field">
@@ -306,58 +289,4 @@ function YourReview({ film, mine, session }: { film: FilmSummary; mine: ReviewDT
       </div>
     </form>
   );
-}
-
-function ReviewCard({ review }: { review: ReviewDTO }) {
-  return (
-    <li className="card rcard">
-      <div className="rhead">
-        {review.author.image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- Google avatar needs no-referrer, which next/image can't set
-          <img className="avatar" src={review.author.image} alt="" referrerPolicy="no-referrer" width={34} height={34} />
-        ) : (
-          <span className="avatar ph" aria-hidden="true">
-            {review.author.name.charAt(0)}
-          </span>
-        )}
-        <div>
-          <p className="rname">{review.author.name}</p>
-          <p className="rdate">
-            {formatDate(review.createdAt)}
-            {review.edited && " · edited"}
-          </p>
-        </div>
-      </div>
-      <ReviewBody review={review} />
-    </li>
-  );
-}
-
-function ReviewBody({ review, open }: { review: ReviewDTO; open?: boolean }) {
-  const [shown, setShown] = useState(!review.spoiler || open === true);
-  return (
-    <>
-      <Stars value={review.rating} size="1.2rem" />
-      {review.body &&
-        (shown ? (
-          <p className="rbody">{review.body}</p>
-        ) : (
-          <p className="rbody hidden">
-            This review contains spoilers.{" "}
-            <button type="button" className="reveal" onClick={() => setShown(true)}>
-              Show it
-            </button>
-          </p>
-        ))}
-    </>
-  );
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function histogramLabel(stats: FilmStats): string {
-  if (!stats.count) return "No ratings yet";
-  return stats.histogram.map((n, i) => `${starLabel(i + 1)} stars: ${n}`).join(", ");
 }

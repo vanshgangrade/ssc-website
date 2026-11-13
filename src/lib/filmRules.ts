@@ -3,3 +3,5 @@
 export const RATING_MIN = 1;
 export const RATING_MAX = 10;
 export const REVIEW_MAX_CHARS = 2000;
+export const BIO_MAX_CHARS = 280;
+export const NAME_MAX_CHARS = 40;

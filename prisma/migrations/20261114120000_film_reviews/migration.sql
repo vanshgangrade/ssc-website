@@ -1,4 +1,4 @@
--- Film diary: Letterboxd-style ratings and reviews of films the club has screened.
+-- Film diary (films.silverscreenbitsgoa.com): Letterboxd-style ratings, reviews and member profiles.
 -- One review per person per film; rating is in half-stars (1 = ½★ … 10 = ★★★★★).
 
 -- CreateTable
@@ -30,6 +30,18 @@ CREATE TABLE "Review" (
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Profile" (
+    "userId" TEXT NOT NULL,
+    "handle" TEXT NOT NULL,
+    "displayName" TEXT,
+    "bio" TEXT NOT NULL DEFAULT '',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Profile_pkey" PRIMARY KEY ("userId")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Film_slug_key" ON "Film"("slug");
 
@@ -39,11 +51,17 @@ CREATE INDEX "Review_filmId_createdAt_idx" ON "Review"("filmId", "createdAt");
 -- CreateIndex
 CREATE UNIQUE INDEX "Review_userId_filmId_key" ON "Review"("userId", "filmId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Profile_handle_key" ON "Profile"("handle");
+
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_filmId_fkey" FOREIGN KEY ("filmId") REFERENCES "Film"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 
 -- Ratings outside ½★–5★ are rejected by the database as well as the app.

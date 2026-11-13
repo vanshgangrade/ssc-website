@@ -417,9 +417,6 @@
 }
 
 @media (max-width: 700px) {
-  .ssc .dnav a:first-child {
-    display: none;
-  }
   .ssc .hero-grid {
     grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
     align-items: start;
@@ -440,5 +437,302 @@
   .ssc .score,
   .ssc .histo {
     grid-column: 1 / -1;
+  }
+}
+
+/* ---------- platform: nav, home, profiles, settings ---------- */
+.ssc .brand-sub {
+  color: var(--mute);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  margin-left: 0.3em;
+}
+.ssc .me {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  font-family: var(--poster-type);
+  letter-spacing: 0.08em;
+  font-size: 16px;
+  color: var(--ink);
+}
+.ssc .me img,
+.ssc .me .avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+.ssc .rname {
+  text-decoration: none;
+}
+.ssc a.rname:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* review cards that also show which film */
+.ssc .rcard.with-film {
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.ssc .rposter {
+  display: block;
+  aspect-ratio: 2 / 3;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+.ssc .rposter img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ssc .rmain {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.ssc .rfilm {
+  font-family: var(--poster-type);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-decoration: none;
+}
+.ssc .rfilm:hover {
+  color: var(--sub);
+}
+
+/* home */
+.ssc .dhero {
+  padding-top: clamp(104px, 15vh, 150px);
+}
+.ssc .dhero h1 {
+  font-family: var(--poster-type);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(2.8rem, 9vw, 6.2rem);
+  line-height: 0.92;
+  margin-top: 18px;
+}
+.ssc .feat {
+  position: relative;
+  overflow: hidden;
+  margin-top: clamp(32px, 5vw, 56px);
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: clamp(20px, 4vw, 48px);
+  align-items: center;
+  text-decoration: none;
+  --c1: #c86a3a;
+}
+.ssc .feat-bg {
+  position: absolute;
+  inset: -20%;
+  background: var(--poster) center / cover no-repeat;
+  filter: blur(46px) brightness(0.35) saturate(1.3);
+}
+.ssc .feat-poster,
+.ssc .feat-copy {
+  position: relative;
+}
+.ssc .feat-poster {
+  display: block;
+  padding: 6px;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ssc .feat:hover .feat-poster {
+  transform: translateY(-6px) rotate(-1deg);
+}
+.ssc .feat-copy {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+.ssc .feat-k {
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  font-size: 14px;
+  color: var(--sub);
+}
+.ssc .feat-t {
+  font-family: var(--poster-type);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  line-height: 0.92;
+}
+.ssc .feat-stats {
+  display: grid;
+  gap: 4px;
+  color: var(--mute);
+  font-size: 15px;
+}
+
+/* profile */
+.ssc .profile {
+  padding-top: clamp(104px, 15vh, 150px);
+}
+.ssc .phead {
+  display: flex;
+  gap: clamp(18px, 4vw, 32px);
+  align-items: center;
+}
+.ssc .phead .avatar {
+  flex: none;
+  box-shadow: 0 0 0 3px var(--room), 0 0 0 4px #3a352c, 0 0 40px rgba(255, 216, 74, 0.15);
+}
+.ssc .pcopy {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  min-width: 0;
+}
+.ssc .pcopy h1 {
+  font-family: var(--poster-type);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(2.2rem, 7vw, 4rem);
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+.ssc .phandle {
+  color: var(--mute);
+  font-size: 15px;
+}
+.ssc .pbio {
+  max-width: 40em;
+  color: #d9d3c8;
+  white-space: pre-line;
+}
+.ssc .pcopy .btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  font-size: 15px;
+}
+.ssc .pstats {
+  margin-top: clamp(28px, 5vw, 44px);
+  display: grid;
+  grid-template-columns: repeat(3, auto) minmax(0, 1fr);
+  gap: 18px clamp(20px, 4vw, 44px);
+  align-items: end;
+}
+.ssc .pstats > div {
+  display: grid;
+  gap: 2px;
+}
+.ssc .pstats b {
+  font-family: var(--poster-type);
+  font-weight: 700;
+  font-size: 2.4rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ssc .pstats span {
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 13px;
+  color: var(--mute);
+}
+.ssc .pavg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.ssc .pdist .histo {
+  margin-top: 0;
+  max-width: none;
+}
+
+/* settings */
+.ssc .settings {
+  max-width: 640px;
+}
+.ssc .sfield {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+}
+.ssc .sfield > span:first-child {
+  font-family: var(--poster-type);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 14px;
+  color: var(--mute);
+}
+.ssc .sfield input,
+.ssc .sfield textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 4px;
+  border: 1px solid #34312c;
+  background: #09090b;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+}
+.ssc .sfield input:focus,
+.ssc .sfield textarea:focus,
+.ssc .prefix-input:focus-within {
+  outline: none;
+  border-color: var(--sub);
+}
+.ssc .prefix-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #34312c;
+  border-radius: 4px;
+  background: #09090b;
+  padding-left: 14px;
+  color: var(--mute);
+}
+.ssc .prefix-input input {
+  border: 0;
+  padding-left: 4px;
+  background: transparent;
+}
+.ssc .sfield small {
+  color: var(--mute);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .ssc .brand-sub,
+  .ssc .me-handle {
+    display: none;
+  }
+  .ssc .feat {
+    grid-template-columns: minmax(0, 110px) minmax(0, 1fr);
+    align-items: start;
+  }
+  .ssc .feat .btn {
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+  .ssc .phead {
+    align-items: flex-start;
+  }
+  .ssc .phead .avatar {
+    width: 64px !important;
+    height: 64px !important;
+  }
+  .ssc .pstats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ssc .pdist {
+    grid-column: 1 / -1;
+  }
+  .ssc .rcard.with-film {
+    grid-template-columns: 52px minmax(0, 1fr);
   }
 }

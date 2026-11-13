@@ -23,6 +23,7 @@ model User {
   recommendations Recommendation[]
   applications    Application[]
   reviews         Review[]
+  profile         Profile?
 
   createdAt DateTime @default(now())
 }
@@ -289,4 +290,17 @@ model Review {
 
   @@unique([userId, filmId])
   @@index([filmId, createdAt])
+}
+
+// Public face of a member on the film diary (films.silverscreenbitsgoa.com/<handle>).
+// Created automatically the first time someone signs in there; never exposes the email.
+model Profile {
+  userId      String   @id
+  handle      String   @unique
+  displayName String?
+  bio         String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
