@@ -185,18 +185,57 @@
   flex: none;
 }
 
-/* the hall: title + screen */
+/* the hall: scrolling through it walks you down the aisle.
+   --p runs 0 → 1 with scroll (set in Ballot.tsx) and drives every transform below. */
 .ssc .hall {
   position: relative;
-  padding-top: clamp(84px, 12vh, 116px);
-  text-align: center;
+  height: 260vh;
+  --p: 0;
+}
+.ssc .view {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
   overflow: hidden;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: linear-gradient(#14110d, #030304 70%);
+}
+/* wall lamps that dim as you walk in */
+.ssc .lampglow {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  pointer-events: none;
+  opacity: calc(1 - var(--p) * 2.4);
+  background: radial-gradient(ellipse at var(--x) 34%, rgba(255, 190, 110, 0.26), rgba(255, 190, 110, 0.06) 40%, transparent 68%);
+}
+.ssc .lampglow.l {
+  left: 0;
+  --x: 0%;
+}
+.ssc .lampglow.r {
+  right: 0;
+  --x: 100%;
+}
+.ssc .b-title {
+  position: absolute;
+  z-index: 6;
+  top: clamp(84px, 12vh, 116px);
+  left: 0;
+  right: 0;
+  padding: 0 var(--gutter);
+  opacity: calc(1 - var(--p) * 4);
+  transform: translateY(calc(var(--p) * -80px));
 }
 .ssc .b-title h1 {
   font-family: var(--poster-type);
   font-weight: 600;
   text-transform: uppercase;
-  font-size: clamp(3rem, 10.5vw, 6.6rem);
+  font-size: clamp(2.6rem, min(10.5vw, 13vh), 6.6rem);
   line-height: 0.92;
   letter-spacing: 0.02em;
   color: #d8d1c3;
@@ -237,10 +276,13 @@
 
 .ssc .screen {
   --glow: #8d7f6a;
+  --w: min(1100px, 92vw, (100svh - 250px) * 2.39);
   position: relative;
   z-index: 2;
-  width: min(880px, 100%);
-  margin: clamp(26px, 4vw, 44px) auto 0;
+  width: var(--w);
+  /* far away and small at the back of the hall, full size once you reach your seat */
+  transform: translateY(calc(17vh - var(--p) * 23vh)) scale(calc(0.44 + var(--p) * 0.56));
+  will-change: transform;
   aspect-ratio: 2.39 / 1;
   overflow: hidden;
   container-type: inline-size;
@@ -333,17 +375,62 @@
     transform: translate(-2%, -4%);
   }
 }
-.ssc .seatrow {
-  position: relative;
-  z-index: 3;
-  height: 96px;
-  margin-top: -34px;
-  background: var(--seats) repeat-x center bottom / auto 96px;
+/* rows of seats you walk past */
+.ssc .srow {
+  position: absolute;
+  z-index: 4;
+  left: -75%;
+  width: 250%;
+  height: 120px;
+  background: var(--seats) repeat-x center bottom;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  will-change: transform;
+  transform: translateY(calc(var(--p) * var(--dy))) scale(calc(var(--s0) + var(--p) * var(--ds)));
+}
+.ssc .srow.far {
+  bottom: 15vh;
+  --s0: 0.5;
+  --ds: 0.6;
+  --dy: 15vh;
+  opacity: 0.9;
+}
+.ssc .srow.mid {
+  bottom: 6vh;
+  --s0: 0.8;
+  --ds: 1.5;
+  --dy: 56vh;
+  background-position-x: calc(50% + 42px);
+  z-index: 5;
+}
+.ssc .srow.near {
+  bottom: -6vh;
+  --s0: 1.25;
+  --ds: 2.4;
+  --dy: 80vh;
+  background-position-x: calc(50% - 84px);
+  z-index: 5;
+}
+.ssc .walk-hint {
+  position: absolute;
+  z-index: 6;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  font-family: var(--poster-type);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: var(--ink);
+  text-shadow: 0 0 12px #000, 0 0 4px #000;
+  opacity: calc(1 - var(--p) * 6);
+  animation: ssc-bob 2.4s ease-in-out infinite;
   pointer-events: none;
 }
-.ssc .floor {
-  height: 1px;
-  background: var(--line);
+@keyframes ssc-bob {
+  50% {
+    transform: translateY(6px);
+  }
 }
 
 /* floating reminder of your vote */
@@ -903,7 +990,12 @@
     display: none;
   }
   .ssc .screen {
+    --w: min(92vw, (100svh - 250px) * 1.78);
     aspect-ratio: 16 / 9;
+  }
+  .ssc .srow {
+    height: 86px;
+    background-size: auto 86px;
   }
   .ssc .feature {
     padding: 0 6cqw 6cqw;
@@ -935,11 +1027,6 @@
   }
   .ssc .chart {
     grid-template-columns: 1fr;
-  }
-  .ssc .seatrow {
-    height: 70px;
-    background-size: auto 70px;
-    margin-top: -24px;
   }
 }
 @media (max-width: 620px) {
@@ -985,5 +1072,13 @@
   .ssc .rv {
     opacity: 1;
     transform: none;
+  }
+  /* no aisle walk: show the final frame, unpinned */
+  .ssc .hall {
+    height: auto;
+    --p: 1;
+  }
+  .ssc .view {
+    position: relative;
   }
 }

@@ -44,6 +44,7 @@ export default function Ballot({
   const [voteNo, setVoteNo] = useState<number | null>(null);
   const [chartSeen, setChartSeen] = useState(false);
   const ballotRef = useRef<HTMLElement>(null);
+  const hallRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const doneRef = useRef<HTMLButtonElement>(null);
   const countdown = useCountdown(closesAt);
@@ -176,6 +177,31 @@ export default function Ballot({
     return () => io.disconnect();
   }, [films.length]);
 
+  // The aisle walk: how far you have scrolled through the hall (0 to 1) drives --p in the CSS.
+  useEffect(() => {
+    const hall = hallRef.current;
+    if (!hall || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    const walk = () => {
+      frame = 0;
+      const r = hall.getBoundingClientRect();
+      const span = r.height - window.innerHeight;
+      const p = span > 0 ? Math.min(1, Math.max(0, -r.top / span) / 0.82) : 1; // arrive a little early, then hold
+      hall.style.setProperty("--p", p.toFixed(4));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(walk);
+    };
+    walk();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
   function scrollToBallot() {
     ballotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -235,8 +261,11 @@ export default function Ballot({
       </header>
 
       <main>
-        <div className="hall">
-          <div className="s-wrap">
+        {/* Scrolling through this tall block walks you down the aisle: the view stays pinned while the screen grows. */}
+        <div className="hall" ref={hallRef}>
+          <div className="view">
+            <div className="lampglow l" />
+            <div className="lampglow r" />
             <div className="b-title">
               <p className="k">
                 Silver Screen Club <span>presents</span>
@@ -273,9 +302,14 @@ export default function Ballot({
               </div>
               <div className="layer grain" />
             </div>
+
+            <i className="srow far" aria-hidden="true" />
+            <i className="srow mid" aria-hidden="true" />
+            <i className="srow near" aria-hidden="true" />
+            <p className="walk-hint" aria-hidden="true">
+              Scroll to find your seat ↓
+            </p>
           </div>
-          <div className="seatrow" aria-hidden="true" />
-          <div className="floor" />
         </div>
 
         <section id="ballot" ref={ballotRef}>
@@ -526,12 +560,6 @@ function Ticket({
               <div>
                 <dt>Venue</dt>
                 <dd>The Auditorium</dd>
-              </div>
-              <div>
-                <dt>Seat</dt>
-                <dd>
-                  Row {"ABCDEFGHJK".charAt(h % 10)} · {((h >>> 8) % 24) + 1}
-                </dd>
               </div>
               <div>
                 <dt>Time</dt>
