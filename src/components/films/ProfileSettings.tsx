@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { updateProfile } from "@/app/diary/actions";
 import { BIO_MAX_CHARS, NAME_MAX_CHARS } from "@/lib/filmRules";
+import { DIARY_HOST } from "@/lib/diaryHost";
 
 export default function ProfileSettings({
   base,
@@ -57,7 +58,9 @@ export default function ProfileSettings({
             disabled={pending}
           />
         </span>
-        <small>Your profile lives at films.silverscreenbitsgoa.com/{handle || "…"}</small>
+        <small>
+          Your profile lives at {DIARY_HOST}/{handle || "…"}
+        </small>
       </label>
 
       <label className="sfield">
