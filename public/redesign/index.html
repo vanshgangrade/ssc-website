@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en" data-lights="up">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silver Screen Club — BITS Pilani, Goa</title>
+<meta name="description" content="Silver Screen Club is the film club at BITS Pilani, Goa. We shortlist three films, the campus votes, and the winner goes up on the big screen.">
+<meta property="og:title" content="Silver Screen Club — BITS Pilani, Goa">
+<meta property="og:description" content="Three films. One vote each. The winner goes up on the big screen.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.silverscreenbitsgoa.com/">
+<meta name="theme-color" content="#06070c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23060607'/%3E%3Crect x='5' y='8' width='22' height='11' fill='%23f3eddd'/%3E%3Cpath d='M6 27v-3a3 3 0 0 1 6 0v3zM13 27v-3a3 3 0 0 1 6 0v3zM20 27v-3a3 3 0 0 1 6 0v3z' fill='%237a6c55'/%3E%3C/svg%3E">
+<style>
+  :root {
+    /* house lights up */
+    --room: #17140f;
+    --ink: #f2ede2;
+    --mute: #a8a195;
+    --line: #37322a;
+    --lamp: 1;
+    --seat-lit: 1.8;
+    /* fixed */
+    --ice: #eaf7ff;  --blue: #39aaff;     /* neon tube: Silver Screen */
+    --pink: #ff5c7c;                      /* neon tube: accents */
+    --sub: #ffd84a;                       /* subtitle yellow */
+    --board: #f3eddd;
+    --poster-type: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --gutter: clamp(16px, 4vw, 56px);
+    --max: 1200px;
+    --fade: 1.4s;
+    --seats: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='120'%3E%3ClinearGradient id='g' x2='0' y2='1'%3E%3Cstop stop-color='%234a3f31'/%3E%3Cstop offset='.28' stop-color='%230a090c'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x2='0' y2='1'%3E%3Cstop stop-color='%23463b2e'/%3E%3Cstop offset='.4' stop-color='%23060607'/%3E%3C/linearGradient%3E%3Cg fill='url(%23h)'%3E%3Ccircle cx='42' cy='28' r='18'/%3E%3Ccircle cx='126' cy='31' r='17'/%3E%3Ccircle cx='294' cy='27' r='18'/%3E%3C/g%3E%3Cg fill='url(%23g)'%3E%3Cpath d='M6 120V62Q6 40 28 40H56Q78 40 78 62V120Z'/%3E%3Cpath d='M90 120V62Q90 40 112 40H140Q162 40 162 62V120Z'/%3E%3Cpath d='M174 120V62Q174 40 196 40H224Q246 40 246 62V120Z'/%3E%3Cpath d='M258 120V62Q258 40 280 40H308Q330 40 330 62V120Z'/%3E%3Cpath d='M342 120V62Q342 40 364 40H392Q414 40 414 62V120Z'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  :root[data-lights="down"] { --room: #060607; --ink: #ece7dd; --mute: #8f8a81; --line: #23211d; --lamp: 0; --seat-lit: 1; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: clip; }
+  body { margin: 0; background: var(--room); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: clip; transition: background-color var(--fade) ease, color var(--fade) ease; }
+  body::after { content: ""; position: fixed; inset: 0; z-index: 70; pointer-events: none; opacity: .07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .6  0 0 0 0 .6  0 0 0 0 .6  0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #torch { position: fixed; inset: 0; z-index: 65; pointer-events: none; opacity: 0; transition: opacity .6s; background: radial-gradient(circle 300px at var(--mx, 50%) var(--my, 50%), rgba(255, 233, 196, .075), transparent 70%); }
+  a { color: inherit; }
+  h1, h2, h3, p, ol, ul { margin: 0; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+  :focus-visible { outline: 2px solid var(--sub); outline-offset: 3px; }
+
+  h2 { font-family: var(--poster-type); font-weight: 700; text-transform: uppercase; font-size: clamp(2.5rem, 7vw, 5.4rem); line-height: .94; letter-spacing: .005em; text-wrap: balance; }
+  .neon-word { color: var(--sub); }
+  .lead { color: var(--mute); max-width: 34em; }
+
+  /* lit wayfinding signs */
+  .sign { display: inline-flex; align-items: center; gap: 10px; font-family: var(--poster-type); font-weight: 600; font-size: 15px; letter-spacing: .28em; text-transform: uppercase; color: #1a1711; background: var(--board); padding: 5px 12px 5px 14px; border-radius: 3px; box-shadow: 0 0 26px rgba(255, 238, 200, .28), inset 0 0 12px rgba(190, 150, 80, .35); }
+  .sign::after { content: "→"; letter-spacing: 0; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--poster-type); font-size: 17px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; padding: 13px 26px; border-radius: 3px; border: 1px solid var(--ink); background: none; color: var(--ink); cursor: pointer; transition: background-color .25s, color .25s, border-color .25s, box-shadow .25s, transform .15s; }
+  .btn.solid { background: var(--board); border-color: var(--board); color: #14110c; }
+  .btn.solid:hover { background: var(--sub); border-color: var(--sub); box-shadow: 0 0 36px rgba(255, 216, 74, .4); }
+  .btn.ghost { border-color: rgba(255, 255, 255, .28); }
+  .btn.ghost:hover { border-color: var(--ink); }
+  .btn:active { transform: translateY(1px); }
+
+  /* ---------- nav ---------- */
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: linear-gradient(rgba(0, 0, 0, .6), transparent); }
+  .nav .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+  .brand { font-family: var(--poster-type); font-weight: 600; font-size: 18px; letter-spacing: .24em; text-transform: uppercase; text-decoration: none; margin-right: auto; }
+  .lights { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; padding: 6px 0; cursor: pointer; color: var(--ink); font-family: var(--poster-type); font-size: 15px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; }
+  .lights .track { width: 40px; height: 22px; border-radius: 22px; background: rgba(255, 255, 255, .16); position: relative; }
+  .lights .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #77726a; transition: transform .4s cubic-bezier(.5, 0, .2, 1), background-color .4s, box-shadow .4s; }
+  [data-lights="up"] .lights .track::after { transform: translateX(18px); background: #ffe6b8; box-shadow: 0 0 14px 2px rgba(255, 230, 184, .7); }
+  .nav .btn { padding: 7px 18px; font-size: 15px; }
+
+  /* ---------- scene 2: the lobby ---------- */
+  .lobby { position: relative; padding: clamp(30px, 5vw, 60px) 0 0; }
+  .lobby::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: var(--lamp); transition: opacity var(--fade);
+    background: radial-gradient(ellipse 50% 28% at 12% 8%, rgba(255, 190, 110, .16), transparent 70%), radial-gradient(ellipse 50% 28% at 88% 34%, rgba(255, 190, 110, .13), transparent 70%); }
+  .lobby .wrap { position: relative; }
+  .head { margin-bottom: clamp(36px, 5vw, 64px); }
+  .head h2 { margin-top: 18px; }
+  .head .lead { margin-top: 18px; }
+
+  /* the poster row: pinned in place while vertical scrolling slides it sideways */
+  .gallery { position: relative; --cw: clamp(200px, (100svh - 385px) * .667, 380px); --pad: max(var(--gutter), calc((100vw - var(--max)) / 2 + var(--gutter))); }
+  .pin { position: relative; padding-top: 84px; }
+  .gallery .head { margin-bottom: 0; }
+  .cases { list-style: none; margin: 0; display: flex; gap: clamp(18px, 2.4vw, 34px); padding: 38px var(--pad) 16px; overflow-x: auto; scrollbar-width: none; }
+  .cases::-webkit-scrollbar { display: none; }
+  .case { flex: 0 0 var(--cw); width: var(--cw); }
+  .prog { display: none; }
+  .gallery.pinned { height: calc(100svh + var(--shift, 0) * 1px); }
+  .pinned .pin { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+  .pinned .cases { width: max-content; overflow: visible; padding-right: calc(50vw - var(--cw) / 2); transform: translate3d(calc(var(--gx, 0) * -1px), 0, 0); will-change: transform; }
+  .pinned .prog { display: flex; align-items: center; gap: 14px; position: absolute; left: var(--pad); right: var(--pad); bottom: 26px; font-family: var(--poster-type); font-size: 15px; letter-spacing: .24em; color: var(--mute); }
+  .prog b { color: var(--sub); font-weight: 600; }
+  .prog i { flex: 1; height: 2px; background: var(--line); position: relative; }
+  .prog i::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--gp, 0) * 100%); background: var(--sub); box-shadow: 0 0 10px rgba(255, 216, 74, .6); }
+  .plaque .no { font-family: var(--poster-type); font-size: 14px; letter-spacing: .26em; text-transform: uppercase; color: var(--sub); opacity: .85; margin-bottom: 4px; }
+  .case { position: relative; }
+  .glass { position: relative; padding: 10px; background: #0b0c0f; border: 1px solid #30323a; border-radius: 5px;
+    box-shadow: 0 0 70px color-mix(in srgb, var(--c1) 34%, transparent), 0 30px 60px rgba(0, 0, 0, .5); transition: box-shadow .5s, transform .5s cubic-bezier(.2, .7, .2, 1); }
+  .glass::before { content: ""; position: absolute; left: 12%; right: 12%; top: -1px; height: 2px; background: #fff3d6; box-shadow: 0 0 16px 3px rgba(255, 236, 190, .8); }
+  .case:hover .glass { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-6px); transition: box-shadow .5s, transform .12s linear; box-shadow: 0 0 110px color-mix(in srgb, var(--c1) 60%, transparent), 0 30px 60px rgba(0, 0, 0, .5); }
+  .poster { position: relative; display: block; aspect-ratio: 2 / 3; overflow: hidden; background: var(--c2); }
+  .poster svg, .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .poster b { position: absolute; left: 0; right: 0; bottom: 7%; text-align: center; padding: 0 8%; font-family: var(--poster-type); font-weight: 600; font-size: clamp(14px, 1.5vw, 21px); letter-spacing: .22em; text-transform: uppercase; line-height: 1.15; color: #fff7ea; }
+  .pick { position: absolute; z-index: 2; top: 0; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; padding: 6px 14px; border-radius: 3px; background: var(--board); color: #17140f; font-family: var(--poster-type); font-weight: 600; text-transform: uppercase; letter-spacing: .22em; font-size: 14px; line-height: 1; box-shadow: 0 0 0 3px #0b0c0f, 0 0 26px color-mix(in srgb, var(--c1) 80%, transparent), 0 6px 16px rgba(0, 0, 0, .5); }
+  .plaque { padding-top: 20px; }
+  .plaque h3 { font-family: var(--poster-type); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: clamp(1.3rem, 1.8vw, 1.6rem); line-height: 1.05; }
+  .plaque .m { color: var(--mute); font-size: 16px; margin-top: 4px; }
+  .cc { display: inline-block; margin-top: 8px; color: var(--sub); font-size: 15px; font-weight: 500; }
+  .bar { margin-top: 12px; height: 3px; background: var(--line); }
+  .bar i { display: block; height: 100%; width: 56.75%; background: var(--sub); box-shadow: 0 0 12px rgba(255, 216, 74, .6); }
+  .votes { margin-top: 7px; font-size: 15px; color: var(--mute); }
+  .votes strong { color: var(--ink); font-weight: 600; }
+
+  /* how it works, on a strip of film */
+  .reel { margin-top: clamp(70px, 10vw, 140px); }
+  .reel .head { margin-bottom: clamp(26px, 4vw, 44px); }
+  .strip { background: #0a0a0c; margin: 0 -6vw; padding: 0 6vw; transform: rotate(-2deg); box-shadow: 0 30px 80px rgba(0, 0, 0, .55); }
+  .strip::before, .strip::after { content: ""; display: block; height: 14px; margin: 10px 0; background: var(--room); transition: background-color var(--fade);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='14'%3E%3Crect x='8' y='1' width='14' height='12' rx='3'/%3E%3C/svg%3E") repeat-x;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='14'%3E%3Crect x='8' y='1' width='14' height='12' rx='3'/%3E%3C/svg%3E") repeat-x; }
+  /* the strip runs sideways as you scroll past, like film through a gate */
+  .strip::before, .strip::after { -webkit-mask-position: calc(var(--sx, 0) * 1px) 0; mask-position: calc(var(--sx, 0) * 1px) 0; }
+  @media (min-width: 861px) { .strip .frames { transform: translateX(calc(var(--sx, 0) * 1px)); will-change: transform; } }
+  .frames { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: var(--max); margin: 0 auto; }
+  .frame { position: relative; padding: 26px 26px 30px; min-height: 250px; border-radius: 8px; background: radial-gradient(ellipse at 30% 0%, #3b2c1b, #1a130c 70%); border: 1px solid rgba(255, 220, 160, .12); }
+  .frame .n { font-family: var(--poster-type); font-weight: 300; font-size: 108px; line-height: .8; color: #ffe6b8; text-shadow: 0 0 30px rgba(255, 200, 120, .35); }
+  .frame .code { position: absolute; top: 14px; right: 16px; font-family: var(--poster-type); font-size: 13px; letter-spacing: .24em; color: var(--sub); opacity: .75; }
+  .frame h3 { font-family: var(--poster-type); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 1.6rem; line-height: 1.05; margin: 20px 0 8px; color: #fff3df; }
+  .frame p { color: #c9bda9; font-size: 17px; }
+
+  /* ---------- scene 3: the hall ---------- */
+  .hall { position: relative; --p: 1; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  @keyframes buzz { 0%, 100% { opacity: 1 } 46% { opacity: 1 } 46.6% { opacity: .72 } 47.2% { opacity: 1 } 47.8% { opacity: .8 } 48.4% { opacity: 1 } }
+  @keyframes bob { 50% { transform: translateY(6px) } }
+  /* opening title, set like the credit block on a film poster */
+  .title { position: absolute; z-index: 6; top: clamp(84px, 12vh, 120px); left: 0; right: 0; padding: 0 var(--gutter); text-align: center; opacity: calc(1 - var(--p) * 4); transform: translateY(calc(var(--p) * -80px)); }
+  .walked .title, .walked .hint { visibility: hidden; }
+  .title h1 { font-family: var(--poster-type); font-weight: 600; text-transform: uppercase; font-size: clamp(2.6rem, min(10.5vw, 15vh), 7.4rem); line-height: .92; letter-spacing: .02em; color: #d8d1c3; margin: 6px 0 8px; }
+  @media (max-height: 600px) { .title { top: 68px; } .title .cta { display: none; } }
+  /* the title pulls into focus when the page opens */
+  @keyframes focus { from { opacity: 0; filter: blur(16px); transform: scale(1.06); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+  .title h1 { animation: focus 1.6s cubic-bezier(.2, .7, .2, 1) .2s both; }
+  .title .k { animation: rise .9s ease .1s both; }
+  .title h1 + .k { animation-delay: 1s; }
+  .title .cta { animation: rise .9s ease 1.3s both; }
+  .title .k { font-family: var(--poster-type); font-weight: 500; text-transform: uppercase; letter-spacing: .08em; font-size: clamp(1.05rem, 2vw, 1.5rem); color: #b9b2a5; }
+  .title .k span { font-weight: 300; font-size: .68em; letter-spacing: .18em; margin: 0 .3em; }
+  .title .cta { margin-top: 22px; }
+  .hint { position: absolute; z-index: 6; left: 0; right: 0; bottom: 22px; text-align: center; font-family: var(--poster-type); letter-spacing: .3em; text-transform: uppercase; font-size: 14px; color: var(--ink); text-shadow: 0 0 12px #000, 0 0 4px #000; opacity: calc(1 - var(--p) * 6); animation: bob 2.4s ease-in-out infinite; pointer-events: none; }
+  .js .hall { height: 300vh; --p: 0; }
+  .js .hall.static { height: auto; --p: 1; }
+  .view { position: relative; height: 100vh; height: 100svh; overflow: hidden; display: grid; place-items: center; background: linear-gradient(var(--room), #030304 70%); transition: background var(--fade); }
+  .js .hall:not(.static) .view { position: sticky; top: 0; }
+  .view .lampglow { position: absolute; top: 0; width: 50%; height: 100%; pointer-events: none; opacity: var(--lamp); transition: opacity var(--fade); background: radial-gradient(ellipse at var(--x) 34%, rgba(255, 190, 110, .26), rgba(255, 190, 110, .06) 40%, transparent 68%); }
+  .lampglow.l { left: 0; --x: 0%; } .lampglow.r { right: 0; --x: 100%; }
+  .after { position: absolute; z-index: 6; left: 0; right: 0; bottom: clamp(120px, 20vh, 190px); text-align: center; opacity: calc((var(--p) - .82) * 6); font-family: var(--poster-type); letter-spacing: .3em; text-transform: uppercase; font-size: 14px; color: var(--mute); pointer-events: none; }
+
+  .screen { --glow: #6b6457; --w: min(1100px, 92vw, (100svh - 250px) * 2.39);
+    position: relative; z-index: 2; width: var(--w); aspect-ratio: 2.39 / 1; overflow: hidden; container-type: inline-size;
+    transform: translateY(calc(17vh - var(--p) * 23vh)) scale(calc(.44 + var(--p) * .56)); will-change: transform;
+    background: linear-gradient(#cfcbc2, #b3afa6); box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 30px 90px rgba(0, 0, 0, .5); transition: box-shadow 1.6s ease, background-color .6s; }
+  [data-lights="down"] .screen { background: #000; box-shadow: 0 0 150px 6px color-mix(in srgb, var(--glow) 55%, transparent), 0 60px 170px color-mix(in srgb, var(--glow) 32%, transparent); }
+  .layer { position: absolute; inset: 0; }
+  .idle { display: grid; place-content: center; justify-items: center; gap: 2.2cqw; text-align: center; padding: 16px; color: #17161a; transition: opacity .5s; }
+  .idle p { font-family: var(--poster-type); font-weight: 600; font-size: clamp(16px, 3.2cqw, 38px); text-transform: uppercase; letter-spacing: .1em; line-height: 1.1; }
+  .idle .btn { border-color: #17161a; background: #17161a; color: #f0ebe1; }
+  .idle .btn:hover { background: var(--sub); color: #17161a; border-color: var(--sub); }
+  [data-lights="down"] .idle { opacity: 0; visibility: hidden; }
+
+
+  .picture { opacity: 0; visibility: hidden; transition: opacity 1.2s ease, visibility 0s 1.2s; }
+  .playing .picture { opacity: 1; visibility: visible; transition: opacity 1.2s ease; }
+  .slide { opacity: 0; transition: opacity 1.4s ease; background: radial-gradient(ellipse at 28% 40%, var(--c1), var(--c2) 75%); color: #fff7ea; }
+  .slide.on { opacity: 1; }
+  .slide::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, .55)); }
+  .feature { position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 5cqw; padding: 0 8cqw 4cqw; }
+  .feature .poster { height: 29cqw; aspect-ratio: 2 / 3; box-shadow: 0 2cqw 6cqw rgba(0, 0, 0, .55); }
+  .feature .k { font-family: var(--poster-type); font-size: clamp(9px, 1.5cqw, 18px); letter-spacing: .3em; text-transform: uppercase; opacity: .85; }
+  .feature .t { font-family: var(--poster-type); font-weight: 700; font-size: 8cqw; line-height: .92; text-transform: uppercase; margin: 1cqw 0; text-shadow: 0 2px 30px rgba(0, 0, 0, .4); }
+  .feature .m { font-size: clamp(9px, 1.6cqw, 19px); opacity: .85; }
+  .slide.card .feature { grid-template-columns: 1fr; text-align: center; padding: 0 6cqw 3cqw; }
+  .slide.card .t { font-size: 11cqw; letter-spacing: .03em; margin: 0 0 1.5cqw; }
+  .subs { position: absolute; z-index: 2; left: 6%; right: 6%; bottom: 6%; text-align: center; font-weight: 600; font-size: clamp(11px, 1.9cqw, 23px); line-height: 1.25; color: var(--sub); text-shadow: 0 0 2px #000, 0 1px 2px #000, 1px 1px 0 #000, -1px -1px 0 #000; }
+  .fx { z-index: 3; pointer-events: none; }
+  .fx .grain { inset: -50%; opacity: .25; mix-blend-mode: overlay; animation: grain .8s steps(4) infinite;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .6  0 0 0 0 .6  0 0 0 0 .6  0 0 0 .7 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  @keyframes grain { 25% { transform: translate(-3%, 4%) } 50% { transform: translate(4%, -3%) } 75% { transform: translate(-2%, -4%) } }
+  .fx .scratch { position: absolute; top: 0; bottom: 0; left: 31%; width: 1px; background: rgba(255, 255, 255, .2); animation: scratch 6s steps(1) infinite; }
+  @keyframes scratch { 0%, 100% { opacity: 0 } 12% { opacity: 1; left: 31% } 15% { opacity: 0 } 58% { opacity: 1; left: 74% } 60% { opacity: 0 } }
+
+  /* rows of seats you walk past */
+  .row { position: absolute; z-index: 4; left: -75%; width: 250%; height: 120px; background: var(--seats) repeat-x center bottom; transform-origin: 50% 100%; pointer-events: none; will-change: transform; filter: brightness(var(--seat-lit)); transition: filter var(--fade);
+    transform: translateY(calc(var(--p) * var(--dy))) scale(calc(var(--s0) + var(--p) * var(--ds))); }
+  .row.far  { bottom: 15vh; --s0: .5;  --ds: .6;  --dy: 15vh; opacity: .9; }
+  .row.mid  { bottom: 6vh; --s0: .8;  --ds: 1.5; --dy: 56vh; background-position-x: calc(50% + 42px); z-index: 5; }
+  .row.near { bottom: -6vh; --s0: 1.25; --ds: 2.4; --dy: 80vh; background-position-x: calc(50% - 84px); z-index: 5; }
+
+  /* ---------- scene 4: the way out ---------- */
+
+  footer { padding: clamp(90px, 12vw, 160px) 0 60px; text-align: center; }
+  /* end credits */
+  .roll { display: grid; gap: clamp(44px, 6vw, 76px); justify-items: center; font-family: var(--poster-type); text-transform: uppercase; color: #cfc8ba; }
+  .roll small { display: block; font-weight: 300; font-size: 15px; letter-spacing: .3em; color: var(--mute); margin-bottom: 8px; }
+  .roll p { font-weight: 500; font-size: clamp(1.5rem, 3.4vw, 2.3rem); line-height: 1.22; letter-spacing: .06em; }
+  .roll .end { font-weight: 700; font-size: clamp(3.2rem, 11vw, 7.5rem); line-height: .9; letter-spacing: .04em; color: #d8d1c3; }
+  .roll .end + small { margin: 14px 0 26px; }
+  .exit { display: inline-block; margin-top: 36px; font-family: var(--poster-type); font-weight: 700; font-size: 22px; letter-spacing: .28em; padding: 4px 12px 4px 18px; text-decoration: none; color: #9dffc0; border: 2px solid #5dfb98; border-radius: 4px; text-shadow: 0 0 10px #2dff82; box-shadow: 0 0 22px rgba(45, 255, 130, .35), inset 0 0 14px rgba(45, 255, 130, .25); }
+
+  .js .rv { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s cubic-bezier(.2, .7, .2, 1); }
+  .js .rv.in { opacity: 1; transform: none; }
+
+  @media (max-width: 860px) {
+    .lights .lbl { display: none; }
+    .strip { transform: none; margin: 0 calc(var(--gutter) * -1); padding: 0; }
+    .frames { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 var(--gutter); scrollbar-width: none; }
+    .frames::-webkit-scrollbar { display: none; }
+    .frame { flex: 0 0 78%; scroll-snap-align: center; }
+    .screen { --w: min(92vw, (100svh - 250px) * 1.78); aspect-ratio: 16 / 9; }
+    .feature { padding: 0 6cqw 6cqw; }
+    .feature .poster { height: 36cqw; }
+    .row { height: 86px; background-size: auto 86px; }
+  }
+  @media (max-width: 520px) {
+    .brand { font-size: 15px; letter-spacing: .18em; }
+    .nav .wrap { gap: 14px; }
+    .cta .btn { flex: 1 1 auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
+    .js .rv { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<div id="torch" aria-hidden="true"></div>
+
+<!-- Drawn stand-in posters. To use real ones, drop catch-me.jpg, mirzapur.jpg, drishyam.jpg, obsession.jpg and ramayana.jpg in a "posters" folder. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="ga" x2="0" y2="1"><stop stop-color="#2a0f1e"/><stop offset=".55" stop-color="#b5461f"/><stop offset=".8" stop-color="#f2a23a"/></linearGradient>
+    <radialGradient id="gb" cx=".5" cy=".38" r=".8"><stop stop-color="#16346e"/><stop offset=".7" stop-color="#040714"/></radialGradient>
+    <radialGradient id="gb2"><stop stop-color="#ffe2a0"/><stop offset=".6" stop-color="#f08a2e"/><stop offset="1" stop-color="#8a2f12"/></radialGradient>
+    <linearGradient id="gc" x2="0" y2="1"><stop stop-color="#f0c98a"/><stop offset=".6" stop-color="#d48a44"/></linearGradient>
+    <symbol id="p-ram" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice">
+      <rect width="200" height="300" fill="url(#ga)"/>
+      <circle cx="100" cy="178" r="44" fill="#ffdf9a"/>
+      <g fill="none" stroke="#ffe9c4" stroke-width="1.6" stroke-linecap="round"><path d="M88 46 Q128 82 88 118"/><path d="M88 46 V118" stroke-width=".8"/><path d="M70 82 H124 M118 77 l7 5 -7 5"/></g>
+      <path d="M0 218 Q50 192 100 214 T200 202 V300 H0Z" fill="#4a1a12"/>
+      <path d="M0 248 Q60 222 120 244 T200 238 V300 H0Z" fill="#1d0a0c"/>
+    </symbol>
+    <linearGradient id="gd" x2="0" y2="1"><stop stop-color="#0d3550"/><stop offset="1" stop-color="#3a93b4"/></linearGradient>
+    <radialGradient id="ge" cx=".5" cy=".45" r=".75"><stop stop-color="#8a1414"/><stop offset=".8" stop-color="#0d0304"/></radialGradient>
+    <linearGradient id="gf" x2="0" y2="1"><stop stop-color="#0f3a2c"/><stop offset="1" stop-color="#030b08"/></linearGradient>
+    <radialGradient id="gg" cx=".5" cy=".47" r=".75"><stop stop-color="#6a1878"/><stop offset=".85" stop-color="#0b0311"/></radialGradient>
+    <symbol id="p-catch" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice">
+      <rect width="200" height="300" fill="url(#gd)"/>
+      <g fill="#fff" opacity=".14"><ellipse cx="46" cy="70" rx="34" ry="9"/><ellipse cx="160" cy="170" rx="40" ry="10"/><ellipse cx="70" cy="214" rx="30" ry="7"/></g>
+      <path d="M18 236 Q84 206 146 100" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="3 6" stroke-linecap="round" opacity=".85"/>
+      <path d="M142 96 L182 70 L164 112 L157 99 Z" fill="#fff"/>
+      <path d="M157 99 L182 70" stroke="#0d3550" stroke-width=".8"/>
+    </symbol>
+    <symbol id="p-mirz" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice">
+      <rect width="200" height="300" fill="url(#ge)"/>
+      <g fill="#100303" stroke="#e7b36a" stroke-opacity=".55" stroke-width="1">
+        <path d="M76 190 V112 L100 84 L124 112 V190 Z"/>
+        <path d="M62 150 h12 v44 h-12z M126 150 h12 v44 h-12z"/>
+        <path d="M60 190 h80 v16 h-80z"/>
+        <path d="M66 206 h8 v36 h-8z M126 206 h8 v36 h-8z"/>
+      </g>
+    </symbol>
+    <symbol id="p-drish" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice">
+      <rect width="200" height="300" fill="url(#gf)"/>
+      <path d="M36 140 Q100 84 164 140 Q100 196 36 140Z" fill="#061510" stroke="#dff5e6" stroke-width="1.6"/>
+      <circle cx="100" cy="140" r="24" fill="#8fd9ae"/><circle cx="100" cy="140" r="10" fill="#04100c"/><circle cx="108" cy="132" r="3" fill="#fff"/>
+      <g stroke="#dff5e6" stroke-opacity=".25"><path d="M0 232 H200 M0 246 H200 M0 264 H200"/></g>
+    </symbol>
+    <symbol id="p-obs" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice">
+      <rect width="200" height="300" fill="url(#gg)"/>
+      <g fill="none" stroke="#ff8ad8" stroke-width="1.4">
+        <circle cx="100" cy="140" r="16"/><circle cx="100" cy="140" r="34" opacity=".8"/><circle cx="100" cy="140" r="54" opacity=".6"/><circle cx="100" cy="140" r="76" opacity=".4"/><circle cx="100" cy="140" r="100" opacity=".22"/>
+      </g>
+      <circle cx="100" cy="140" r="5" fill="#ffd6f2"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">SSC</a>
+    <button class="lights" type="button" id="lights" aria-pressed="true">
+      <span class="lbl">House lights</span><span class="track" aria-hidden="true"></span>
+    </button>
+    <a class="btn solid js-vote" href="vote.html">Vote</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- OPENING: the hall. Scrolling walks you down the aisle. -->
+  <section class="hall" id="hall" aria-label="Screen 1">
+    <div class="view">
+      <div class="lampglow l"></div><div class="lampglow r"></div>
+      <div class="title">
+        <p class="k">BITS Pilani, Goa <span>presents</span></p>
+        <h1>Silver Screen Club</h1>
+        <p class="k"><span>movies on campus, chosen by</span> the campus</p>
+        <div class="cta">
+          <a class="btn solid js-vote" href="vote.html">See the ballot</a>
+          <a class="btn ghost" href="#screened">This semester</a>
+        </div>
+      </div>
+      <p class="hint" aria-hidden="true">Scroll to find your seat ↓</p>
+
+      <div class="screen" id="screen">
+        <div class="layer idle">
+          <p>The show starts when the lights go down</p>
+          <button class="btn" type="button" id="dim">Dim the lights</button>
+        </div>
+        <div class="layer picture" aria-hidden="true">
+          <div class="layer slide card on" style="--c1:#3a3340;--c2:#060608" data-glow="#8d7f6a">
+            <div class="feature"><div>
+              <p class="t">Silver Screen Club</p>
+              <p class="k">BITS Pilani · Goa presents</p>
+            </div></div>
+            <p class="subs">[projector whirring]</p>
+          </div>
+          <div class="layer slide" style="--c1:#2f86a8;--c2:#071c2b" data-glow="#3a93b4">
+            <div class="feature">
+              <span class="poster"><svg><use href="#p-catch"/></svg><img src="posters/catch-me.jpg" alt="" onerror="this.remove()"></span>
+              <div><p class="k">Screening 01 · this semester</p><p class="t">Catch Me If You Can</p></div>
+            </div>
+            <p class="subs">[jet engine roaring]</p>
+          </div>
+          <div class="layer slide" style="--c1:#8a1414;--c2:#0d0304" data-glow="#b01c1c">
+            <div class="feature">
+              <span class="poster"><svg><use href="#p-mirz"/></svg><img src="posters/mirzapur.jpg" alt="" onerror="this.remove()"></span>
+              <div><p class="k">Screening 02 · this semester</p><p class="t">Mirzapur: The Movie</p></div>
+            </div>
+            <p class="subs">[tense music]</p>
+          </div>
+          <div class="layer slide" style="--c1:#1c6b4b;--c2:#030b08" data-glow="#2f9c6c">
+            <div class="feature">
+              <span class="poster"><svg><use href="#p-drish"/></svg><img src="posters/drishyam.jpg" alt="" onerror="this.remove()"></span>
+              <div><p class="k">Screening 03 · this semester</p><p class="t">Drishyam: The Conclusion</p></div>
+            </div>
+            <p class="subs">[nobody in the hall breathes]</p>
+          </div>
+          <div class="layer slide" style="--c1:#6a1878;--c2:#0b0311" data-glow="#b23cc0">
+            <div class="feature">
+              <span class="poster"><svg><use href="#p-obs"/></svg><img src="posters/obsession.jpg" alt="" onerror="this.remove()"></span>
+              <div><p class="k">Screening 04 · this semester</p><p class="t">Obsession</p></div>
+            </div>
+            <p class="subs">[audience gasps]</p>
+          </div>
+          <div class="layer slide" style="--c1:#b5461f;--c2:#1c0a10" data-glow="#e0692a">
+            <div class="feature">
+              <span class="poster"><svg><use href="#p-ram"/></svg><img src="posters/ramayana.jpg" alt="" onerror="this.remove()"></span>
+              <div><p class="k">Screening 05 · the latest</p><p class="t">Ramayana: Part 1</p></div>
+            </div>
+            <p class="subs">— 706 of 1,244 of you voted for this one.</p>
+          </div>
+          <div class="layer fx"><div class="scratch"></div><div class="layer grain"></div></div>
+        </div>
+      </div>
+
+      <i class="row far"></i><i class="row mid"></i><i class="row near"></i>
+      <p class="after">Best seat in the house</p>
+    </div>
+  </section>
+
+
+  <!-- Screened this semester + how it works -->
+  <section class="lobby" id="screened">
+    <div class="gallery" id="gallery">
+    <div class="pin">
+    <div class="wrap">
+      <div class="head rv">
+        <p class="sign">This semester</p>
+        <h2>Five nights. <span class="neon-word">Five films.</span></h2>
+      </div>
+    </div>
+
+      <ol class="cases">
+        <li class="case rv" style="--c1:#3a93b4;--c2:#0d3550">
+          <div class="glass">
+            <span class="poster"><svg><use href="#p-catch"/></svg><b>Catch Me<br>If You Can</b><img src="posters/catch-me.jpg" alt="Catch Me If You Can poster" onerror="this.remove()"></span>
+          </div>
+          <div class="plaque"><p class="no">Screening 01</p><h3>Catch Me If You Can</h3></div>
+        </li>
+        <li class="case rv" style="--c1:#b01c1c;--c2:#0d0304">
+          <div class="glass">
+            <span class="poster"><svg><use href="#p-mirz"/></svg><b>Mirzapur<br>The Movie</b><img src="posters/mirzapur.jpg" alt="Mirzapur: The Movie poster" onerror="this.remove()"></span>
+          </div>
+          <div class="plaque"><p class="no">Screening 02</p><h3>Mirzapur: The Movie</h3></div>
+        </li>
+        <li class="case rv" style="--c1:#2f9c6c;--c2:#030b08">
+          <div class="glass">
+            <span class="poster"><svg><use href="#p-drish"/></svg><b>Drishyam<br>The Conclusion</b><img src="posters/drishyam.jpg" alt="Drishyam: The Conclusion poster" onerror="this.remove()"></span>
+          </div>
+          <div class="plaque"><p class="no">Screening 03</p><h3>Drishyam: The Conclusion</h3></div>
+        </li>
+        <li class="case rv" style="--c1:#b23cc0;--c2:#0b0311">
+          <div class="glass">
+            <span class="poster"><svg><use href="#p-obs"/></svg><b>Obsession</b><img src="posters/obsession.jpg" alt="Obsession poster" onerror="this.remove()"></span>
+          </div>
+          <div class="plaque"><p class="no">Screening 04</p><h3>Obsession</h3></div>
+        </li>
+        <li class="case rv" style="--c1:#e0692a;--c2:#1c0a10">
+          <div class="glass">
+            <span class="pick">Latest</span>
+            <span class="poster"><svg><use href="#p-ram"/></svg><b>Ramayana<br>Part 1</b><img src="posters/ramayana.jpg" alt="Ramayana: Part 1 poster" onerror="this.remove()"></span>
+          </div>
+          <div class="plaque">
+            <p class="no">Screening 05</p>
+            <h3>Ramayana: Part 1</h3>
+            <div class="bar"><i></i></div>
+            <p class="votes">Won with <strong>706</strong> of 1,244 votes</p>
+          </div>
+        </li>
+      </ol>
+      <div class="prog" aria-hidden="true"><span><b id="gcount">01</b> / 05</span><i></i></div>
+    </div>
+    </div>
+
+    <div class="wrap">
+      <div class="reel" id="how">
+        <div class="head rv">
+          <p class="sign">Box office</p>
+          <h2>How a film gets <span class="neon-word">on screen</span></h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip" id="strip">
+      <div class="frames">
+        <div class="frame">
+          <span class="code" aria-hidden="true">SSC ▸ 01A</span>
+          <div class="n">1</div>
+          <h3>We shortlist three</h3>
+          <p>The club puts three films on the ballot, each marked with whether it screens with English subtitles.</p>
+        </div>
+        <div class="frame">
+          <span class="code" aria-hidden="true">SSC ▸ 02A</span>
+          <div class="n">2</div>
+          <h3>You cast a vote</h3>
+          <p>Sign in with Google and pick one. The count is live, and you can switch your vote until the ballot closes.</p>
+        </div>
+        <div class="frame">
+          <span class="code" aria-hidden="true">SSC ▸ 03A</span>
+          <div class="n">3</div>
+          <h3>The winner plays</h3>
+          <p>The film with the most votes is screened on campus. Bring your friends, including the ones who voted wrong.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <!-- End credits. Add Instagram / email as another block here. -->
+    <div class="roll">
+      <div class="rv"><small>A BITS Pilani, Goa production</small><p>Silver Screen Club</p></div>
+      <div class="rv"><small>Screened this semester</small><p>Catch Me If You Can<br>Mirzapur: The Movie<br>Drishyam: The Conclusion<br>Obsession<br>Ramayana: Part 1</p></div>
+      <div class="rv"><small>Starring</small><p>The whole campus</p></div>
+      <div class="rv"><small>Programmed by</small><p>Silver Screen Club</p></div>
+      <div class="rv"><small>Voting by</small><p>You</p></div>
+      <div class="rv"><small>On location at</small><p>K K Birla Goa Campus</p></div>
+      <div class="rv"><p class="end">The End</p><small>until the next ballot</small><a class="btn solid js-vote" href="vote.html">Vote for the next film</a></div>
+    </div>
+    <a class="exit" href="#top">EXIT ↑</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    root.classList.add('js');
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* lights + the reel on the screen */
+    var screen = document.getElementById('screen');
+    var navBtn = document.getElementById('lights');
+    var slides = [].slice.call(screen.querySelectorAll('.slide'));
+    var timers = [], reel = null;
+
+    function show(i) {
+      slides.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+      screen.style.setProperty('--glow', slides[i].getAttribute('data-glow'));
+    }
+    function play() {
+      screen.classList.add('playing');
+      if (calm) { show(slides.length - 1); return; }
+      var i = 0; show(0);
+      reel = setInterval(function () { i = (i + 1) % slides.length; show(i); }, 4600);
+    }
+    function set(down, instant) {
+      timers.forEach(clearTimeout); timers = []; clearInterval(reel);
+      root.setAttribute('data-lights', down ? 'down' : 'up');
+      navBtn.setAttribute('aria-pressed', String(!down));
+      if (!down) { screen.classList.remove('playing'); return; }
+      play();
+    }
+    navBtn.addEventListener('click', function () { set(root.getAttribute('data-lights') !== 'down'); });
+    document.getElementById('dim').addEventListener('click', function () { set(true); });
+
+    /* the hall: scroll position walks the camera down the aisle */
+    var hall = document.getElementById('hall');
+    var dimmed = false, ticking = false;
+    function walk() {
+      ticking = false;
+      var r = hall.getBoundingClientRect();
+      var total = r.height - window.innerHeight;
+      var p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 1;
+      p = Math.min(1, p / .82);                     // arrive a little early, then hold the final frame
+      hall.style.setProperty('--p', p.toFixed(4));
+      hall.classList.toggle('walked', p > .24);
+      if (!dimmed && p > .5) { dimmed = true; if (root.getAttribute('data-lights') === 'up') set(true); }
+    }
+    if (calm) {
+      hall.classList.add('static');
+      new IntersectionObserver(function (e, o) { if (e[0].isIntersecting) { set(true, true); o.disconnect(); } }, { threshold: .4 }).observe(hall);
+    } else {
+      window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(walk); } }, { passive: true });
+      window.addEventListener('resize', walk);
+      walk();
+    }
+
+    /* the poster row: scrolling down slides the posters sideways */
+    var gallery = document.getElementById('gallery');
+    var track = gallery.querySelector('.cases');
+    var gcount = document.getElementById('gcount');
+    var shift = 0, gTick = false;
+    function measure() {
+      var pin = !calm && window.innerHeight >= 600;
+      gallery.classList.toggle('pinned', pin);
+      shift = pin ? Math.max(0, track.scrollWidth - document.documentElement.clientWidth) : 0;
+      gallery.style.setProperty('--shift', shift);
+      slide();
+    }
+    function slide() {
+      gTick = false;
+      if (!shift) { gallery.style.setProperty('--gx', 0); return; }
+      var gp = Math.min(1, Math.max(0, -gallery.getBoundingClientRect().top / shift));
+      gallery.style.setProperty('--gx', (gp * shift).toFixed(1));
+      gallery.style.setProperty('--gp', gp.toFixed(4));
+      gcount.textContent = '0' + (Math.round(gp * (track.children.length - 1)) + 1);
+    }
+    window.addEventListener('scroll', function () { if (!gTick) { gTick = true; requestAnimationFrame(slide); } }, { passive: true });
+    window.addEventListener('resize', measure);
+    window.addEventListener('load', measure);
+    measure();
+
+    /* the how-it-works strip runs sideways like film through a gate */
+    var strip = document.getElementById('strip'), sTick = false;
+    function runStrip() {
+      sTick = false;
+      var r = strip.getBoundingClientRect();
+      strip.style.setProperty('--sx', (((r.top + r.height / 2) / window.innerHeight - .5) * 120).toFixed(1));
+    }
+    if (!calm) {
+      window.addEventListener('scroll', function () { if (!sTick) { sTick = true; requestAnimationFrame(runStrip); } }, { passive: true });
+      runStrip();
+    }
+
+    /* poster cases lean toward the pointer */
+    if (window.matchMedia('(hover: hover)').matches && !calm) {
+      [].forEach.call(document.querySelectorAll('.case .glass'), function (g) {
+        g.addEventListener('pointermove', function (e) {
+          var r = g.getBoundingClientRect();
+          g.style.setProperty('--ry', (((e.clientX - r.left) / r.width - .5) * 14).toFixed(1) + 'deg');
+          g.style.setProperty('--rx', ((.5 - (e.clientY - r.top) / r.height) * 10).toFixed(1) + 'deg');
+        });
+        g.addEventListener('pointerleave', function () { g.style.removeProperty('--rx'); g.style.removeProperty('--ry'); });
+      });
+    }
+
+    /* an usher's torch that follows the pointer */
+    var torch = document.getElementById('torch');
+    if (window.matchMedia('(hover: hover)').matches) {
+      window.addEventListener('pointermove', function (e) {
+        torch.style.opacity = 1;
+        torch.style.setProperty('--mx', e.clientX + 'px');
+        torch.style.setProperty('--my', e.clientY + 'px');
+      }, { passive: true });
+    }
+
+    var items = document.querySelectorAll('.rv');
+    if (!('IntersectionObserver' in window)) { items.forEach(function (el) { el.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    items.forEach(function (el) { io.observe(el); });
+  })();
+</script>
+</body>
+</html>
