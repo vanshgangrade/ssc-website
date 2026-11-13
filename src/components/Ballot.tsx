@@ -210,7 +210,7 @@ export default function Ballot({
     <div className="ssc">
       <header className="nav">
         <div className="s-wrap">
-          <a className="brand" href="/club" aria-label="About Silver Screen Club">
+          <a className="brand" href="/" aria-label="About Silver Screen Club">
             SSC
           </a>
           {session ? (
@@ -437,7 +437,7 @@ export default function Ballot({
             Silver Screen Club <small>presents</small> The Ballot <small>starring</small> The Whole Campus <small>voting by</small> You{" "}
             <small>on location at</small> BITS Pilani, K K Birla Goa Campus
           </p>
-          <a className="btn ghost" href="/club">
+          <a className="btn ghost" href="/">
             About the club
           </a>
         </div>
