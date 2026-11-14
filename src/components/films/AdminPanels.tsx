@@ -128,8 +128,8 @@ export function AdminFilms({ films, base }: { films: AdminFilm[]; base: string }
                 {f.year ? ` · ${f.year}` : ""}
               </p>
               <p className="muted small">
-                {f.reviews} {f.reviews === 1 ? "review" : "reviews"} · {f.checkins} checked in ·{" "}
-                {f.reviewsOpen ? "Open for reviews" : "Reviews closed"} · {f.checkInCode ? `Check-in code: ${f.checkInCode}` : "No check-in code"}
+                {f.reviews} {f.reviews === 1 ? "review" : "reviews"} · {f.checkins} watched at the screening ·{" "}
+                {f.reviewsOpen ? "Open for reviews" : "Reviews closed"}
               </p>
               <div className="yours-actions">
                 <button
@@ -279,11 +279,6 @@ function FilmEditor({
           // eslint-disable-next-line @next/next/no-img-element -- preview of an upload or URL
           <img src={form.posterUrl} alt="Poster preview" className="athumb big" />
         )}
-      </label>
-      <label className="sfield">
-        <span>Screening check-in code</span>
-        <input value={form.checkInCode} onChange={(e) => set({ checkInCode: e.target.value })} placeholder="e.g. BRIDGE" maxLength={40} disabled={pending} />
-        <small>Announce this at the screening. Members who enter it get “Watched at the screening”. Leave empty to turn check-in off.</small>
       </label>
       <label className="check">
         <input type="checkbox" checked={form.reviewsOpen} onChange={(e) => set({ reviewsOpen: e.target.checked })} disabled={pending} />

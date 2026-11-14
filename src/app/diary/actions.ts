@@ -22,10 +22,11 @@ const reviewSchema = z.object({
   rating: z.number().int().min(RATING_MIN).max(RATING_MAX),
   body: z.string().max(REVIEW_MAX_CHARS * 2), // trimmed and re-checked below
   spoiler: z.boolean(),
+  atScreening: z.boolean(),
 });
 
 // Creates or replaces the signed-in person's review — one per person per film.
-export async function saveReview(input: { slug: string; rating: number; body: string; spoiler: boolean }): Promise<Result> {
+export async function saveReview(input: { slug: string; rating: number; body: string; spoiler: boolean; atScreening: boolean }): Promise<Result> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Sign in to rate this film." };
 
@@ -46,6 +47,10 @@ export async function saveReview(input: { slug: string; rating: number; body: st
       create: { userId: session.user.id, filmId: film.id, rating: parsed.data.rating, body, spoiler },
       update: { rating: parsed.data.rating, body, spoiler },
     });
+    // "I watched it at the screening" is self-reported; it shows as a badge on the review.
+    const key = { userId_filmId: { userId: session.user.id, filmId: film.id } };
+    if (parsed.data.atScreening) await prisma.checkin.upsert({ where: key, create: { userId: session.user.id, filmId: film.id }, update: {} });
+    else await prisma.checkin.deleteMany({ where: { userId: session.user.id, filmId: film.id } });
   } catch (error) {
     console.error("Failed to save review:", error);
     return { error: "Couldn't save your review. Try again." };
@@ -63,6 +68,7 @@ export async function deleteReview(slug: string): Promise<Result> {
   if (!film) return { error: "That film isn't in the diary." };
 
   await prisma.review.deleteMany({ where: { userId: session.user.id, filmId: film.id } });
+  await prisma.checkin.deleteMany({ where: { userId: session.user.id, filmId: film.id } });
   refresh();
   return { ok: true };
 }
@@ -98,24 +104,6 @@ export async function updateProfile(input: { handle: string; displayName: string
 
   refresh();
   return { ok: true, handle: parsed.data.handle };
-}
-
-// --- screening check-in ---
-
-export async function checkIn(slug: string, code: string): Promise<Result> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "Sign in first." };
-  const film = await prisma.film.findUnique({ where: { slug }, select: { id: true, checkInCode: true } });
-  if (!film?.checkInCode) return { error: "Check-in isn't open for this film." };
-  if (code.trim().toLowerCase() !== film.checkInCode.trim().toLowerCase()) return { error: "That code doesn't match. Check what was announced at the screening." };
-  await ensureProfile(session.user.id);
-  await prisma.checkin.upsert({
-    where: { userId_filmId: { userId: session.user.id, filmId: film.id } },
-    create: { userId: session.user.id, filmId: film.id },
-    update: {},
-  });
-  refresh();
-  return { ok: true };
 }
 
 // --- likes ---

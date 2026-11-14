@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import type { FilmStats, FilmSummary, ReviewDTO } from "@/lib/films";
 import { REVIEW_MAX_CHARS } from "@/lib/filmRules";
-import { checkIn, deleteReview, saveReview } from "@/app/diary/actions";
+import { deleteReview, saveReview } from "@/app/diary/actions";
 import { StarInput, Stars, starLabel } from "./Stars";
 import { ReviewActions, ReviewBody, ReviewItem, shareReview } from "./ReviewItem";
 import type { ViewerCaps } from "./ReviewItem";
@@ -71,8 +71,7 @@ export default function FilmDiary({
       </section>
 
       <section className="s-wrap">
-        <YourReview film={film} mine={mine} me={me} base={base} viewer={viewer} />
-        {film.hasCheckIn && <CheckInCard slug={film.slug} signedIn={!!me} checkedIn={checkedIn} />}
+        <YourReview film={film} mine={mine} me={me} base={base} viewer={viewer} checkedIn={checkedIn} />
       </section>
 
       <section className="s-wrap reviews">
@@ -141,12 +140,27 @@ export function Histogram({ stats }: { stats: FilmStats }) {
   );
 }
 
-function YourReview({ film, mine, me, base, viewer }: { film: FilmSummary; mine: ReviewDTO | null; me: Me; base: string; viewer: ViewerCaps }) {
+function YourReview({
+  film,
+  mine,
+  me,
+  base,
+  viewer,
+  checkedIn,
+}: {
+  film: FilmSummary;
+  mine: ReviewDTO | null;
+  me: Me;
+  base: string;
+  viewer: ViewerCaps;
+  checkedIn: boolean;
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(!mine);
   const [rating, setRating] = useState(mine?.rating ?? 0);
   const [body, setBody] = useState(mine?.body ?? "");
   const [spoiler, setSpoiler] = useState(mine?.spoiler ?? false);
+  const [atScreening, setAtScreening] = useState(checkedIn);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
@@ -208,6 +222,7 @@ function YourReview({ film, mine, me, base, viewer }: { film: FilmSummary; mine:
                 setRating(0);
                 setBody("");
                 setSpoiler(false);
+                setAtScreening(false);
                 setEditing(true);
                 router.refresh();
               });
@@ -241,7 +256,7 @@ function YourReview({ film, mine, me, base, viewer }: { film: FilmSummary; mine:
         }
         setError(null);
         start(async () => {
-          const res = await saveReview({ slug: film.slug, rating, body, spoiler });
+          const res = await saveReview({ slug: film.slug, rating, body, spoiler, atScreening });
           if ("error" in res) {
             setError(res.error);
             return;
@@ -275,6 +290,10 @@ function YourReview({ film, mine, me, base, viewer }: { film: FilmSummary; mine:
         <input type="checkbox" checked={spoiler} onChange={(e) => setSpoiler(e.target.checked)} disabled={pending || !body.trim()} />
         <span>Contains spoilers</span>
       </label>
+      <label className="check">
+        <input type="checkbox" checked={atScreening} onChange={(e) => setAtScreening(e.target.checked)} disabled={pending} />
+        <span>I watched it at the SSC screening</span>
+      </label>
       {error && (
         <p className="err" role="alert">
           {error}
@@ -293,6 +312,7 @@ function YourReview({ film, mine, me, base, viewer }: { film: FilmSummary; mine:
               setRating(mine.rating);
               setBody(mine.body);
               setSpoiler(mine.spoiler);
+              setAtScreening(checkedIn);
               setError(null);
               setEditing(false);
             }}
@@ -301,56 +321,6 @@ function YourReview({ film, mine, me, base, viewer }: { film: FilmSummary; mine:
           </button>
         )}
       </div>
-    </form>
-  );
-}
-
-// "Were you there?" — the code is announced at the screening; entering it earns the badge.
-function CheckInCard({ slug, signedIn, checkedIn }: { slug: string; signedIn: boolean; checkedIn: boolean }) {
-  const router = useRouter();
-  const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
-
-  if (checkedIn) {
-    return (
-      <div className="card checkin done">
-        <span className="badge">✓ Watched at the screening</span>
-        <p className="muted small">Your review shows this badge.</p>
-      </div>
-    );
-  }
-  return (
-    <form
-      className="card checkin"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!signedIn) {
-          signIn("google");
-          return;
-        }
-        setError(null);
-        start(async () => {
-          const res = await checkIn(slug, code);
-          if ("error" in res) {
-            setError(res.error);
-            return;
-          }
-          router.refresh();
-        });
-      }}
-    >
-      <div>
-        <p className="yours-title">Were you at the screening?</p>
-        <p className="muted small">Enter the code announced in the hall to get the “Watched at the screening” badge.</p>
-      </div>
-      <div className="checkin-row">
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Screening code" aria-label="Screening code" maxLength={40} disabled={pending} />
-        <button className="btn solid" type="submit" disabled={pending || (signedIn && !code.trim())}>
-          {signedIn ? (pending ? "Checking…" : "Check in") : "Sign in"}
-        </button>
-      </div>
-      {error && <p className="err">{error}</p>}
     </form>
   );
 }

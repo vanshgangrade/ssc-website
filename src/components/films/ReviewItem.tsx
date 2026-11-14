@@ -81,7 +81,7 @@ function ReviewDate({ review }: { review: ReviewDTO }) {
       {formatDate(review.createdAt)}
       {review.edited && " · edited"}
       {review.atScreening && (
-        <span className="badge" title="Entered the code announced at the screening">
+        <span className="badge" title="Watched it at the SSC screening">
           ✓ Watched at the screening
         </span>
       )}

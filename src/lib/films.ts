@@ -10,7 +10,6 @@ export type FilmSummary = {
   meta: string;
   posterUrl: string;
   reviewsOpen: boolean;
-  hasCheckIn: boolean;
 };
 
 export type FilmStats = {
@@ -68,10 +67,10 @@ export async function getViewer(user: { id?: string | null; email?: string | nul
   return { userId: user.id, isAdmin: false, isMod: profile?.role === "moderator" };
 }
 
-const filmSelect = { slug: true, title: true, year: true, meta: true, posterUrl: true, reviewsOpen: true, checkInCode: true } as const;
+const filmSelect = { slug: true, title: true, year: true, meta: true, posterUrl: true, reviewsOpen: true } as const;
 
-function toFilm(f: { slug: string; title: string; year: number | null; meta: string; posterUrl: string; reviewsOpen: boolean; checkInCode: string | null }): FilmSummary {
-  return { slug: f.slug, title: f.title, year: f.year, meta: f.meta, posterUrl: f.posterUrl, reviewsOpen: f.reviewsOpen, hasCheckIn: !!f.checkInCode };
+function toFilm(f: { slug: string; title: string; year: number | null; meta: string; posterUrl: string; reviewsOpen: boolean }): FilmSummary {
+  return { slug: f.slug, title: f.title, year: f.year, meta: f.meta, posterUrl: f.posterUrl, reviewsOpen: f.reviewsOpen };
 }
 
 const authorSelect = { name: true, image: true, profile: { select: { handle: true, displayName: true } } } as const;
