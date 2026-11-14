@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   await ensureProfile(session.user.id);
   const profile = await prisma.profile.findUniqueOrThrow({
     where: { userId: session.user.id },
-    select: { handle: true, displayName: true, bio: true },
+    select: { handle: true, displayName: true, bio: true, emailLikes: true, emailReplies: true },
   });
 
   return (
@@ -29,6 +29,7 @@ export default async function SettingsPage() {
         base={base}
         initial={{ handle: profile.handle, displayName: profile.displayName ?? "", bio: profile.bio }}
         googleName={session.user.name ?? ""}
+        emailPrefs={{ emailLikes: profile.emailLikes, emailReplies: profile.emailReplies }}
       />
     </main>
   );

@@ -3,16 +3,11 @@
 import { useState } from "react";
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { RATING_MAX, RATING_MIN } from "@/lib/filmRules";
+import { starLabel } from "./starLabel";
 
 type Css = CSSProperties & Record<`--${string}`, string | number>;
 
-// "3½" style label for a half-star value (1–10).
-export function starLabel(value: number): string {
-  const whole = Math.floor(value / 2);
-  const half = value % 2 === 1;
-  if (!whole) return "½";
-  return `${whole}${half ? "½" : ""}`;
-}
+export { starLabel };
 
 // Read-only stars. `value` is in half-stars (0–10); fractions are fine for averages.
 export function Stars({ value, size = "1em", label }: { value: number; size?: string; label?: string }) {

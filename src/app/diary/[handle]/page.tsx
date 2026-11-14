@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getProfilePage } from "@/lib/films";
+import { getProfilePage, getViewer } from "@/lib/films";
 import { getDiaryBase } from "@/lib/diaryServer";
 import { Histogram } from "@/components/films/FilmDiary";
 import { Avatar, ReviewItem } from "@/components/films/ReviewItem";
 import { Stars } from "@/components/films/Stars";
+import FollowButton from "@/components/films/FollowButton";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -20,9 +21,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProfilePage({ params }: Props) {
   const { handle } = await params;
   const [session, base] = await Promise.all([auth(), getDiaryBase()]);
-  const data = await getProfilePage(decodeURIComponent(handle), session?.user?.id ?? null);
+  const viewer = await getViewer(session?.user);
+  const data = await getProfilePage(decodeURIComponent(handle), viewer?.userId ?? null);
   if (!data) notFound();
   const { profile, stats, written, reviews, isMe } = data;
+  const caps = { signedIn: !!viewer, isMod: viewer?.isMod ?? false };
   const joined = new Date(profile.joined).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 
   return (
@@ -34,11 +37,16 @@ export default async function ProfilePage({ params }: Props) {
           <p className="phandle">
             @{profile.handle} · joined {joined}
           </p>
+          <p className="pfollow">
+            <b>{data.followers}</b> {data.followers === 1 ? "follower" : "followers"} · <b>{data.following}</b> following
+          </p>
           {profile.bio && <p className="pbio">{profile.bio}</p>}
-          {isMe && (
+          {isMe ? (
             <Link className="btn ghost" href={`${base}/settings`}>
               Edit profile
             </Link>
+          ) : (
+            <FollowButton handle={profile.handle} initial={data.followedByMe} signedIn={!!viewer} />
           )}
         </div>
       </section>
@@ -72,7 +80,7 @@ export default async function ProfilePage({ params }: Props) {
         ) : (
           <ol className="rlist">
             {reviews.map((r) => (
-              <ReviewItem key={r.id} review={r} base={base} show="film" />
+              <ReviewItem key={r.id} review={r} base={base} show="film" viewer={caps} />
             ))}
           </ol>
         )}

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { isAdminEmail } from "@/lib/admin";
 import { RATING_MAX, RATING_MIN } from "@/lib/filmRules";
 
 export type FilmSummary = {
@@ -9,6 +10,7 @@ export type FilmSummary = {
   meta: string;
   posterUrl: string;
   reviewsOpen: boolean;
+  hasCheckIn: boolean;
 };
 
 export type FilmStats = {
@@ -21,6 +23,14 @@ export type FilmStats = {
 
 export type Author = { name: string; handle: string | null; image: string | null };
 
+export type CommentDTO = {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: Author;
+  mine: boolean;
+};
+
 export type ReviewDTO = {
   id: string;
   rating: number;
@@ -31,6 +41,12 @@ export type ReviewDTO = {
   author: Author;
   film: { slug: string; title: string; posterUrl: string };
   mine: boolean;
+  likes: number;
+  likedByMe: boolean;
+  commentCount: number;
+  // Only filled in on the film page; elsewhere reviews link there for the thread.
+  comments: CommentDTO[] | null;
+  atScreening: boolean;
 };
 
 export type ProfileDTO = {
@@ -41,21 +57,44 @@ export type ProfileDTO = {
   joined: string;
 };
 
-const filmSelect = { slug: true, title: true, year: true, meta: true, posterUrl: true, reviewsOpen: true } as const;
+// Who is looking at the page, and what they may do. Roles are never shown to anyone else.
+export type Viewer = { userId: string; isAdmin: boolean; isMod: boolean } | null;
 
-const reviewSelect = {
-  id: true,
-  userId: true,
-  rating: true,
-  body: true,
-  spoiler: true,
-  createdAt: true,
-  updatedAt: true,
-  film: { select: { slug: true, title: true, posterUrl: true } },
-  user: { select: { name: true, image: true, profile: { select: { handle: true, displayName: true } } } },
-} satisfies Prisma.ReviewSelect;
+export async function getViewer(user: { id?: string | null; email?: string | null } | null | undefined): Promise<Viewer> {
+  if (!user?.id) return null;
+  const isAdmin = isAdminEmail(user.email);
+  if (isAdmin) return { userId: user.id, isAdmin, isMod: true };
+  const profile = await prisma.profile.findUnique({ where: { userId: user.id }, select: { role: true } });
+  return { userId: user.id, isAdmin: false, isMod: profile?.role === "moderator" };
+}
 
-type ReviewRow = Prisma.ReviewGetPayload<{ select: typeof reviewSelect }>;
+const filmSelect = { slug: true, title: true, year: true, meta: true, posterUrl: true, reviewsOpen: true, checkInCode: true } as const;
+
+function toFilm(f: { slug: string; title: string; year: number | null; meta: string; posterUrl: string; reviewsOpen: boolean; checkInCode: string | null }): FilmSummary {
+  return { slug: f.slug, title: f.title, year: f.year, meta: f.meta, posterUrl: f.posterUrl, reviewsOpen: f.reviewsOpen, hasCheckIn: !!f.checkInCode };
+}
+
+const authorSelect = { name: true, image: true, profile: { select: { handle: true, displayName: true } } } as const;
+
+function reviewSelect(viewerId: string | null) {
+  return {
+    id: true,
+    userId: true,
+    filmId: true,
+    rating: true,
+    body: true,
+    spoiler: true,
+    createdAt: true,
+    updatedAt: true,
+    film: { select: { slug: true, title: true, posterUrl: true } },
+    user: { select: authorSelect },
+    // Matches nothing when signed out, so likedByMe is simply false.
+    likes: { where: { userId: viewerId ?? "" }, select: { userId: true } },
+    _count: { select: { likes: true, comments: true } },
+  } satisfies Prisma.ReviewSelect;
+}
+
+type ReviewRow = Prisma.ReviewGetPayload<{ select: ReturnType<typeof reviewSelect> }>;
 
 function statsFrom(ratings: number[]): FilmStats {
   const histogram = Array.from({ length: RATING_MAX }, () => 0);
@@ -70,8 +109,32 @@ function publicName(displayName: string | null | undefined, name: string | null 
   return displayName?.trim() || name?.trim() || "SSC member";
 }
 
-function toDTO(r: ReviewRow, viewerId: string | null): ReviewDTO {
-  return {
+function toAuthor(u: { name: string | null; image: string | null; profile: { handle: string; displayName: string | null } | null }): Author {
+  return { name: publicName(u.profile?.displayName, u.name), handle: u.profile?.handle ?? null, image: u.image };
+}
+
+// One query for every (person, film) pair in the list, instead of one per review.
+async function checkinSet(rows: { userId: string; filmId: string }[]): Promise<Set<string>> {
+  if (!rows.length) return new Set();
+  const found = await prisma.checkin.findMany({
+    where: { OR: rows.map((r) => ({ userId: r.userId, filmId: r.filmId })) },
+    select: { userId: true, filmId: true },
+  });
+  return new Set(found.map((c) => `${c.userId}|${c.filmId}`));
+}
+
+async function toDTOs(rows: ReviewRow[], viewerId: string | null, withComments: boolean): Promise<ReviewDTO[]> {
+  const [checked, comments] = await Promise.all([
+    checkinSet(rows),
+    withComments && rows.length
+      ? prisma.comment.findMany({
+          where: { reviewId: { in: rows.map((r) => r.id) } },
+          orderBy: { createdAt: "asc" },
+          select: { id: true, reviewId: true, userId: true, body: true, createdAt: true, user: { select: authorSelect } },
+        })
+      : Promise.resolve([]),
+  ]);
+  return rows.map((r) => ({
     id: r.id,
     rating: r.rating,
     body: r.body,
@@ -79,25 +142,35 @@ function toDTO(r: ReviewRow, viewerId: string | null): ReviewDTO {
     createdAt: r.createdAt.toISOString(),
     // Prisma stamps updatedAt on create too, so only count edits made a minute or more later.
     edited: r.updatedAt.getTime() - r.createdAt.getTime() > 60_000,
-    author: { name: publicName(r.user.profile?.displayName, r.user.name), handle: r.user.profile?.handle ?? null, image: r.user.image },
+    author: toAuthor(r.user),
     film: r.film,
     mine: viewerId !== null && r.userId === viewerId,
-  };
+    likes: r._count.likes,
+    likedByMe: r.likes.length > 0,
+    commentCount: r._count.comments,
+    comments: withComments
+      ? comments
+          .filter((c) => c.reviewId === r.id)
+          .map((c) => ({ id: c.id, body: c.body, createdAt: c.createdAt.toISOString(), author: toAuthor(c.user), mine: viewerId === c.userId }))
+      : null,
+    atScreening: checked.has(`${r.userId}|${r.filmId}`),
+  }));
 }
 
 export async function getFilmPage(slug: string, viewerId: string | null) {
-  const film = await prisma.film.findUnique({
-    where: { slug },
-    select: { ...filmSelect, reviews: { orderBy: { createdAt: "desc" }, select: reviewSelect } },
-  });
+  const film = await prisma.film.findUnique({ where: { slug }, select: { id: true, ...filmSelect } });
   if (!film) return null;
-  const { reviews, ...summary } = film;
-  const list = reviews.map((r) => toDTO(r, viewerId));
+  const [rows, checkedIn] = await Promise.all([
+    prisma.review.findMany({ where: { filmId: film.id }, orderBy: { createdAt: "desc" }, select: reviewSelect(viewerId) }),
+    viewerId ? prisma.checkin.findUnique({ where: { userId_filmId: { userId: viewerId, filmId: film.id } }, select: { userId: true } }) : null,
+  ]);
+  const list = await toDTOs(rows, viewerId, true);
   return {
-    film: summary as FilmSummary,
-    stats: statsFrom(reviews.map((r) => r.rating)),
+    film: toFilm(film),
+    stats: statsFrom(rows.map((r) => r.rating)),
     reviews: list,
     mine: list.find((r) => r.mine) ?? null,
+    checkedIn: !!checkedIn,
   };
 }
 
@@ -106,12 +179,20 @@ export async function listFilms() {
     orderBy: [{ screenedOn: "desc" }, { createdAt: "desc" }],
     select: { ...filmSelect, reviews: { select: { rating: true } } },
   });
-  return films.map(({ reviews, ...film }) => ({ film: film as FilmSummary, stats: statsFrom(reviews.map((r) => r.rating)) }));
+  return films.map(({ reviews, ...film }) => ({ film: toFilm(film), stats: statsFrom(reviews.map((r) => r.rating)) }));
 }
 
-export async function getRecentReviews(limit: number, viewerId: string | null): Promise<ReviewDTO[]> {
-  const rows = await prisma.review.findMany({ orderBy: { createdAt: "desc" }, take: limit, select: reviewSelect });
-  return rows.map((r) => toDTO(r, viewerId));
+// Home feed. "friends" limits it to people the viewer follows.
+export async function getRecentReviews(limit: number, viewerId: string | null, feed: "all" | "friends" = "all"): Promise<ReviewDTO[]> {
+  let where: Prisma.ReviewWhereInput = {};
+  if (feed === "friends") {
+    if (!viewerId) return [];
+    const follows = await prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } });
+    if (!follows.length) return [];
+    where = { userId: { in: follows.map((f) => f.followingId) } };
+  }
+  const rows = await prisma.review.findMany({ where, orderBy: { createdAt: "desc" }, take: limit, select: reviewSelect(viewerId) });
+  return toDTOs(rows, viewerId, false);
 }
 
 export async function getProfilePage(handle: string, viewerId: string | null) {
@@ -123,11 +204,19 @@ export async function getProfilePage(handle: string, viewerId: string | null) {
       displayName: true,
       bio: true,
       createdAt: true,
-      user: { select: { name: true, image: true, reviews: { orderBy: { createdAt: "desc" }, select: reviewSelect } } },
+      user: {
+        select: {
+          name: true,
+          image: true,
+          _count: { select: { followers: true, following: true } },
+          followers: { where: { followerId: viewerId ?? "" }, select: { followerId: true } },
+        },
+      },
     },
   });
   if (!profile) return null;
-  const reviews = profile.user.reviews.map((r) => toDTO(r, viewerId));
+  const rows = await prisma.review.findMany({ where: { userId: profile.userId }, orderBy: { createdAt: "desc" }, select: reviewSelect(viewerId) });
+  const reviews = await toDTOs(rows, viewerId, false);
   return {
     profile: {
       handle: profile.handle,
@@ -137,10 +226,55 @@ export async function getProfilePage(handle: string, viewerId: string | null) {
       joined: profile.createdAt.toISOString(),
     } satisfies ProfileDTO,
     isMe: viewerId === profile.userId,
-    stats: statsFrom(profile.user.reviews.map((r) => r.rating)),
+    followers: profile.user._count.followers,
+    following: profile.user._count.following,
+    followedByMe: profile.user.followers.length > 0,
+    stats: statsFrom(rows.map((r) => r.rating)),
     written: reviews.filter((r) => r.body).length,
     reviews,
   };
+}
+
+// --- notifications ---
+
+export type NotificationDTO = {
+  id: string;
+  type: "like" | "comment" | "follow";
+  actor: Author;
+  film: { slug: string; title: string } | null;
+  snippet: string;
+  createdAt: string;
+  unread: boolean;
+};
+
+export async function unreadCount(userId: string): Promise<number> {
+  return prisma.notification.count({ where: { userId, readAt: null } });
+}
+
+export async function getNotifications(userId: string): Promise<NotificationDTO[]> {
+  const rows = await prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 60,
+    select: {
+      id: true,
+      type: true,
+      createdAt: true,
+      readAt: true,
+      actor: { select: authorSelect },
+      review: { select: { film: { select: { slug: true, title: true } } } },
+      comment: { select: { body: true } },
+    },
+  });
+  return rows.map((n) => ({
+    id: n.id,
+    type: n.type as NotificationDTO["type"],
+    actor: toAuthor(n.actor),
+    film: n.review?.film ?? null,
+    snippet: n.comment?.body.slice(0, 140) ?? "",
+    createdAt: n.createdAt.toISOString(),
+    unread: !n.readAt,
+  }));
 }
 
 // --- profiles ---
@@ -150,6 +284,7 @@ export const HANDLE_PATTERN = /^[a-z0-9][a-z0-9_-]{2,19}$/;
 const RESERVED = new Set([
   "film", "films", "settings", "signin", "signout", "login", "logout", "api", "diary", "admin", "about", "help",
   "new", "edit", "search", "u", "user", "users", "vote", "club", "posters", "recap", "ssc", "silverscreen", "me",
+  "notifications", "moderator", "moderators", "mod", "report", "reports",
 ]);
 
 export function handleProblem(handle: string): string | null {

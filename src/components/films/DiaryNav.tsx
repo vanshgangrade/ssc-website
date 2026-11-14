@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { MAIN_ORIGIN } from "@/lib/diaryHost";
 
-export default function DiaryNav({ base, me }: { base: string; me: { handle: string; image: string | null } | null }) {
+export default function DiaryNav({ base, me }: { base: string; me: { handle: string; image: string | null; unread: number; isMod: boolean } | null }) {
   return (
     <header className="nav">
       <div className="s-wrap">
@@ -28,7 +28,7 @@ export default function DiaryNav({ base, me }: { base: string; me: { handle: str
 }
 
 // Avatar button that opens a small menu: profile, edit profile, sign out.
-function AccountMenu({ base, me }: { base: string; me: { handle: string; image: string | null } }) {
+function AccountMenu({ base, me }: { base: string; me: { handle: string; image: string | null; unread: number; isMod: boolean } }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +58,11 @@ function AccountMenu({ base, me }: { base: string; me: { handle: string; image: 
           <span className="avatar ph">{me.handle.charAt(0)}</span>
         )}
         <span className="me-handle">{me.handle}</span>
+        {me.unread > 0 && (
+          <span className="ndot" aria-label={`${me.unread} new notifications`}>
+            {me.unread > 9 ? "9+" : me.unread}
+          </span>
+        )}
         <span className="caret" aria-hidden="true">
           ▾
         </span>
@@ -68,9 +73,17 @@ function AccountMenu({ base, me }: { base: string; me: { handle: string; image: 
           <Link role="menuitem" href={`${base}/${me.handle}`} onClick={() => setOpen(false)}>
             Your profile
           </Link>
+          <Link role="menuitem" href={`${base}/notifications`} onClick={() => setOpen(false)}>
+            Notifications{me.unread > 0 ? ` (${me.unread})` : ""}
+          </Link>
           <Link role="menuitem" href={`${base}/settings`} onClick={() => setOpen(false)}>
             Edit profile
           </Link>
+          {me.isMod && (
+            <Link role="menuitem" href={`${base}/admin`} onClick={() => setOpen(false)}>
+              Admin panel
+            </Link>
+          )}
           <button role="menuitem" type="button" className="acct-out" onClick={() => signOut()}>
             Sign out
           </button>

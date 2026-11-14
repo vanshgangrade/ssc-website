@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
-import { ensureProfile } from "@/lib/films";
+import { ensureProfile, getViewer, unreadCount } from "@/lib/films";
 import { getDiaryBase } from "@/lib/diaryServer";
 import { MAIN_ORIGIN } from "@/lib/diaryHost";
 import DiaryNav from "@/components/films/DiaryNav";
@@ -14,11 +14,15 @@ export const metadata: Metadata = {
 
 export default async function DiaryLayout({ children }: { children: React.ReactNode }) {
   const [session, base] = await Promise.all([auth(), getDiaryBase()]);
-  const me = session?.user?.id ? await ensureProfile(session.user.id) : null;
+  const viewer = await getViewer(session?.user);
+  const [me, unread] = viewer ? await Promise.all([ensureProfile(viewer.userId), unreadCount(viewer.userId)]) : [null, 0];
 
   return (
     <div className="ssc diary">
-      <DiaryNav base={base} me={me && session?.user ? { handle: me.handle, image: session.user.image ?? null } : null} />
+      <DiaryNav
+        base={base}
+        me={me && session?.user ? { handle: me.handle, image: session.user.image ?? null, unread, isMod: viewer?.isMod ?? false } : null}
+      />
       {children}
       <footer className="b-foot">
         <div className="s-wrap">

@@ -7,13 +7,14 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import type { FilmStats, FilmSummary, ReviewDTO } from "@/lib/films";
 import { REVIEW_MAX_CHARS } from "@/lib/filmRules";
-import { deleteReview, saveReview } from "@/app/diary/actions";
+import { checkIn, deleteReview, saveReview } from "@/app/diary/actions";
 import { StarInput, Stars, starLabel } from "./Stars";
-import { ReviewBody, ReviewItem } from "./ReviewItem";
+import { ReviewActions, ReviewBody, ReviewItem, shareReview } from "./ReviewItem";
+import type { ViewerCaps } from "./ReviewItem";
 
 type Css = CSSProperties & Record<`--${string}`, string | number>;
 type Me = { handle: string } | null;
-type Sort = "new" | "high" | "low";
+type Sort = "new" | "popular" | "high" | "low";
 
 export default function FilmDiary({
   film,
@@ -22,6 +23,8 @@ export default function FilmDiary({
   mine,
   me,
   base,
+  isMod,
+  checkedIn,
 }: {
   film: FilmSummary;
   stats: FilmStats;
@@ -29,10 +32,14 @@ export default function FilmDiary({
   mine: ReviewDTO | null;
   me: Me;
   base: string;
+  isMod: boolean;
+  checkedIn: boolean;
 }) {
+  const viewer: ViewerCaps = { signedIn: !!me, isMod };
   const [sort, setSort] = useState<Sort>("new");
   const others = useMemo(() => {
     const list = reviews.filter((r) => !r.mine);
+    if (sort === "popular") return [...list].sort((a, b) => b.likes - a.likes || b.commentCount - a.commentCount);
     if (sort === "high") return [...list].sort((a, b) => b.rating - a.rating);
     if (sort === "low") return [...list].sort((a, b) => a.rating - b.rating);
     return list;
@@ -64,7 +71,8 @@ export default function FilmDiary({
       </section>
 
       <section className="s-wrap">
-        <YourReview film={film} mine={mine} me={me} base={base} />
+        <YourReview film={film} mine={mine} me={me} base={base} viewer={viewer} />
+        {film.hasCheckIn && <CheckInCard slug={film.slug} signedIn={!!me} checkedIn={checkedIn} />}
       </section>
 
       <section className="s-wrap reviews">
@@ -77,6 +85,7 @@ export default function FilmDiary({
               <span>Sort</span>
               <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
                 <option value="new">Newest</option>
+                <option value="popular">Popular</option>
                 <option value="high">Highest rated</option>
                 <option value="low">Lowest rated</option>
               </select>
@@ -88,7 +97,7 @@ export default function FilmDiary({
         ) : (
           <ol className="rlist">
             {others.map((r) => (
-              <ReviewItem key={r.id} review={r} base={base} show="author" />
+              <ReviewItem key={r.id} review={r} base={base} show="author" viewer={viewer} />
             ))}
           </ol>
         )}
@@ -132,7 +141,7 @@ export function Histogram({ stats }: { stats: FilmStats }) {
   );
 }
 
-function YourReview({ film, mine, me, base }: { film: FilmSummary; mine: ReviewDTO | null; me: Me; base: string }) {
+function YourReview({ film, mine, me, base, viewer }: { film: FilmSummary; mine: ReviewDTO | null; me: Me; base: string; viewer: ViewerCaps }) {
   const router = useRouter();
   const [editing, setEditing] = useState(!mine);
   const [rating, setRating] = useState(mine?.rating ?? 0);
@@ -168,7 +177,12 @@ function YourReview({ film, mine, me, base }: { film: FilmSummary; mine: ReviewD
           )}
         </div>
         <ReviewBody review={mine} open />
+        {mine.atScreening && <span className="badge">✓ Watched at the screening</span>}
+        <ReviewActions review={mine} base={base} viewer={viewer} threaded />
         <div className="yours-actions">
+          <button className="btn solid" type="button" onClick={() => shareReview(mine, base)}>
+            Share as image
+          </button>
           <button
             className="btn ghost"
             type="button"
@@ -287,6 +301,56 @@ function YourReview({ film, mine, me, base }: { film: FilmSummary; mine: ReviewD
           </button>
         )}
       </div>
+    </form>
+  );
+}
+
+// "Were you there?" — the code is announced at the screening; entering it earns the badge.
+function CheckInCard({ slug, signedIn, checkedIn }: { slug: string; signedIn: boolean; checkedIn: boolean }) {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  if (checkedIn) {
+    return (
+      <div className="card checkin done">
+        <span className="badge">✓ Watched at the screening</span>
+        <p className="muted small">Your review shows this badge.</p>
+      </div>
+    );
+  }
+  return (
+    <form
+      className="card checkin"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!signedIn) {
+          signIn("google");
+          return;
+        }
+        setError(null);
+        start(async () => {
+          const res = await checkIn(slug, code);
+          if ("error" in res) {
+            setError(res.error);
+            return;
+          }
+          router.refresh();
+        });
+      }}
+    >
+      <div>
+        <p className="yours-title">Were you at the screening?</p>
+        <p className="muted small">Enter the code announced in the hall to get the “Watched at the screening” badge.</p>
+      </div>
+      <div className="checkin-row">
+        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Screening code" aria-label="Screening code" maxLength={40} disabled={pending} />
+        <button className="btn solid" type="submit" disabled={pending || (signedIn && !code.trim())}>
+          {signedIn ? (pending ? "Checking…" : "Check in") : "Sign in"}
+        </button>
+      </div>
+      {error && <p className="err">{error}</p>}
     </form>
   );
 }

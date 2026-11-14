@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { ensureProfile, getFilmPage } from "@/lib/films";
+import { ensureProfile, getFilmPage, getViewer } from "@/lib/films";
 import { getDiaryBase } from "@/lib/diaryServer";
 import FilmDiary from "@/components/films/FilmDiary";
 
@@ -20,9 +20,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FilmPage({ params }: Props) {
   const { slug } = await params;
   const [session, base] = await Promise.all([auth(), getDiaryBase()]);
-  const userId = session?.user?.id ?? null;
+  const viewer = await getViewer(session?.user);
+  const userId = viewer?.userId ?? null;
   const [data, me] = await Promise.all([getFilmPage(slug, userId), userId ? ensureProfile(userId) : null]);
   if (!data) notFound();
 
-  return <FilmDiary film={data.film} stats={data.stats} reviews={data.reviews} mine={data.mine} me={me ? { handle: me.handle } : null} base={base} />;
+  return (
+    <FilmDiary
+      film={data.film}
+      stats={data.stats}
+      reviews={data.reviews}
+      mine={data.mine}
+      me={me ? { handle: me.handle } : null}
+      base={base}
+      isMod={viewer?.isMod ?? false}
+      checkedIn={data.checkedIn}
+    />
+  );
 }

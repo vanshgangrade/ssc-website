@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { updateProfile } from "@/app/diary/actions";
+import { updateEmailPrefs, updateProfile } from "@/app/diary/actions";
 import { BIO_MAX_CHARS, NAME_MAX_CHARS } from "@/lib/filmRules";
 import { DIARY_HOST } from "@/lib/diaryHost";
 
@@ -12,11 +12,15 @@ export default function ProfileSettings({
   base,
   initial,
   googleName,
+  emailPrefs,
 }: {
   base: string;
   initial: { handle: string; displayName: string; bio: string };
   googleName: string;
+  emailPrefs: { emailLikes: boolean; emailReplies: boolean };
 }) {
+  const [emailLikes, setEmailLikes] = useState(emailPrefs.emailLikes);
+  const [emailReplies, setEmailReplies] = useState(emailPrefs.emailReplies);
   const router = useRouter();
   const [handle, setHandle] = useState(initial.handle);
   const [displayName, setDisplayName] = useState(initial.displayName);
@@ -31,7 +35,7 @@ export default function ProfileSettings({
         e.preventDefault();
         setError(null);
         start(async () => {
-          const res = await updateProfile({ handle, displayName, bio });
+          const [res] = await Promise.all([updateProfile({ handle, displayName, bio }), updateEmailPrefs({ emailLikes, emailReplies })]);
           if ("error" in res) {
             setError(res.error);
             return;
@@ -76,6 +80,18 @@ export default function ProfileSettings({
           {bio.length} / {BIO_MAX_CHARS}
         </small>
       </label>
+
+      <fieldset className="sfield prefs">
+        <span>Email me when</span>
+        <label className="check">
+          <input type="checkbox" checked={emailReplies} onChange={(e) => setEmailReplies(e.target.checked)} disabled={pending} />
+          <span>someone replies to my review</span>
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={emailLikes} onChange={(e) => setEmailLikes(e.target.checked)} disabled={pending} />
+          <span>someone likes my review (at most one email per review a day)</span>
+        </label>
+      </fieldset>
 
       {error && (
         <p className="err" role="alert">

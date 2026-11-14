@@ -24,6 +24,14 @@ model User {
   applications    Application[]
   reviews         Review[]
   profile         Profile?
+  checkins        Checkin[]
+  reviewLikes     ReviewLike[]
+  comments        Comment[]
+  reports         Report[]
+  following       Follow[]       @relation("follower")
+  followers       Follow[]       @relation("following")
+  notifications   Notification[] @relation("recipient")
+  notified        Notification[] @relation("actor")
 
   createdAt DateTime @default(now())
 }
@@ -269,9 +277,12 @@ model Film {
   screenedOn  DateTime?
   // Only films with this on take new ratings; existing reviews stay visible either way.
   reviewsOpen Boolean   @default(true)
+  // Announced at the screening; entering it earns the "Watched at the screening" badge.
+  checkInCode String?
   createdAt   DateTime  @default(now())
 
-  reviews Review[]
+  reviews  Review[]
+  checkins Checkin[]
 }
 
 model Review {
@@ -288,6 +299,11 @@ model Review {
   film Film @relation(fields: [filmId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  likes         ReviewLike[]
+  comments      Comment[]
+  reports       Report[]
+  notifications Notification[]
+
   @@unique([userId, filmId])
   @@index([filmId, createdAt])
 }
@@ -299,8 +315,101 @@ model Profile {
   handle      String   @unique
   displayName String?
   bio         String   @default("")
+  // "member" or "moderator". Admins come from ADMIN_EMAILS. Never shown publicly.
+  role        String   @default("member")
+  emailLikes   Boolean  @default(true)
+  emailReplies Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Proof someone was at a screening: they entered the code announced there.
+model Checkin {
+  userId    String
+  filmId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  film Film @relation(fields: [filmId], references: [id], onDelete: Cascade)
+
+  @@id([userId, filmId])
+}
+
+model ReviewLike {
+  userId    String
+  reviewId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reviewId])
+  @@index([reviewId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  review        Review         @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports       Report[]
+  notifications Notification[]
+
+  @@index([reviewId, createdAt])
+}
+
+// A member flagging a review or comment for moderators. Exactly one of reviewId/commentId is set.
+model Report {
+  id         String    @id @default(cuid())
+  reporterId String
+  reviewId   String?
+  commentId  String?
+  reason     String    @default("")
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  reporter User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  review   Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  comment  Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([resolvedAt, createdAt])
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+}
+
+// In-app notifications; also used to rate-limit the matching emails.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  actorId   String
+  // "like" | "comment" | "follow"
+  type      String
+  reviewId  String?
+  commentId String?
+  emailed   Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user    User     @relation("recipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor   User     @relation("actor", fields: [actorId], references: [id], onDelete: Cascade)
+  review  Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

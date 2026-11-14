@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { getRecentReviews, listFilms } from "@/lib/films";
+import { getRecentReviews, getViewer, listFilms } from "@/lib/films";
 import { getDiaryBase } from "@/lib/diaryServer";
 import { ReviewItem } from "@/components/films/ReviewItem";
 import { Stars } from "@/components/films/Stars";
@@ -8,9 +8,12 @@ import { Stars } from "@/components/films/Stars";
 // Ratings change as people post, so always read fresh numbers.
 export const dynamic = "force-dynamic";
 
-export default async function DiaryHome() {
-  const [session, base] = await Promise.all([auth(), getDiaryBase()]);
-  const [films, recent] = await Promise.all([listFilms(), getRecentReviews(12, session?.user?.id ?? null)]);
+export default async function DiaryHome({ searchParams }: { searchParams: Promise<{ feed?: string }> }) {
+  const [session, base, { feed: feedParam }] = await Promise.all([auth(), getDiaryBase(), searchParams]);
+  const viewer = await getViewer(session?.user);
+  const feed = feedParam === "friends" && viewer ? "friends" : "all";
+  const [films, recent] = await Promise.all([listFilms(), getRecentReviews(20, viewer?.userId ?? null, feed)]);
+  const caps = { signedIn: !!viewer, isMod: viewer?.isMod ?? false };
   const open = films.filter((f) => f.film.reviewsOpen);
   const featured = open[0] ?? films[0] ?? null;
 
@@ -82,16 +85,30 @@ export default async function DiaryHome() {
         </section>
       )}
 
-      <section className="s-wrap reviews">
-        <h2>
-          Just <span className="hl">logged</span>
-        </h2>
+      <section className="s-wrap reviews" id="feed">
+        <div className="reviews-head">
+          <h2>
+            Just <span className="hl">logged</span>
+          </h2>
+          {viewer && (
+            <nav className="tabs" aria-label="Feed">
+              <Link href={`${base || "/"}#feed`} aria-current={feed === "all" ? "page" : undefined} scroll={false}>
+                Everyone
+              </Link>
+              <Link href={`${base}/?feed=friends#feed`} aria-current={feed === "friends" ? "page" : undefined} scroll={false}>
+                Friends
+              </Link>
+            </nav>
+          )}
+        </div>
         {recent.length === 0 ? (
-          <p className="empty">No reviews yet. The first one could be yours.</p>
+          <p className="empty">
+            {feed === "friends" ? "Nothing from people you follow yet. Follow members from their profiles to fill this up." : "No reviews yet. The first one could be yours."}
+          </p>
         ) : (
           <ol className="rlist">
             {recent.map((r) => (
-              <ReviewItem key={r.id} review={r} base={base} show="both" />
+              <ReviewItem key={r.id} review={r} base={base} show="both" viewer={caps} />
             ))}
           </ol>
         )}
