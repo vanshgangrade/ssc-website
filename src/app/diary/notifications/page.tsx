@@ -3,7 +3,8 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { getNotifications } from "@/lib/films";
 import { getDiaryBase } from "@/lib/diaryServer";
-import { Avatar, formatDate } from "@/components/films/ReviewItem";
+import { Avatar } from "@/components/films/ReviewItem";
+import { formatDate } from "@/components/films/formatDate";
 import SignInPrompt from "@/components/films/SignInPrompt";
 import MarkRead from "@/components/films/MarkRead";
 

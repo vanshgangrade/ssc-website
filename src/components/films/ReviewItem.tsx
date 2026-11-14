@@ -9,6 +9,7 @@ import { COMMENT_MAX_CHARS } from "@/lib/filmRules";
 import { addComment, deleteComment, removeReview, report, toggleLike } from "@/app/diary/actions";
 import { Stars } from "./Stars";
 import { shareCard } from "./shareCard";
+import { formatDate } from "./formatDate";
 
 // What the person looking at the page can do. Moderators see delete options; nobody else can tell who they are.
 export type ViewerCaps = { signedIn: boolean; isMod: boolean };
@@ -365,6 +366,3 @@ export function Avatar({ name, image, size = 34 }: { name: string; image: string
   );
 }
 
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}

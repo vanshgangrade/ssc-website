@@ -7,7 +7,7 @@ import type { AdminFilm, AdminModerator, AdminReport } from "@/lib/diaryAdmin";
 import { dismissReport, removeReported, saveFilm, setModerator } from "@/app/diary/admin/actions";
 import { MAX_POSTER_BYTES } from "@/lib/movies";
 import { Stars } from "./Stars";
-import { formatDate } from "./ReviewItem";
+import { formatDate } from "./formatDate";
 
 type Act = () => Promise<{ ok: true } | { error: string }>;
 
